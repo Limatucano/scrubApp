@@ -53,6 +53,16 @@ kotlin {
             implementation(libs.voyager.screenModel)
             implementation(libs.voyager.transitions)
             implementation(libs.voyager.koin)
+
+            implementation(libs.moko.permissions.core)
+            implementation(libs.moko.permissions.compose)
+            implementation(libs.moko.permissions.camera)
+            implementation(libs.moko.permissions.gallery)
+
+            implementation(libs.androidx.camera.camera2)
+            implementation(libs.androidx.camera.core)
+            implementation(libs.androidx.camera.lifecycle)
+            implementation(libs.androidx.camera.view)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

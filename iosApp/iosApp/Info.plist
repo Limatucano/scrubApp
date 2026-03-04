@@ -4,5 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+    <key>NSCameraUsageDescription</key>
+    <string>Precisamos da câmera para escanear a etiqueta cirúrgica.</string>
+
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Precisamos acessar sua galeria para importar uma foto da etiqueta.</string>
 </dict>
 </plist>

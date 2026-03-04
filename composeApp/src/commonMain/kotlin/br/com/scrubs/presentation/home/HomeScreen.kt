@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.scrubs.domain.model.DateFilter
+import br.com.scrubs.presentation.camera.CameraScreen
 import br.com.scrubs.presentation.home.components.AmountMolecule
 import br.com.scrubs.presentation.home.components.HeaderOrganism
 import br.com.scrubs.presentation.home.components.ReceiptItemMolecule
@@ -46,7 +47,7 @@ class HomeScreen : Screen {
         HomeContent(
             state = state,
             onEvent = screenModel::onEvent,
-            onAddClick = {}
+            onAddClick = { navigator?.push(CameraScreen()) }
         )
     }
 }
@@ -62,7 +63,7 @@ private fun HomeContent(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* navegar para tela de adicionar */ },
+                onClick = { onAddClick() },
                 containerColor = Color(0xFF4A4AE8),
                 contentColor = Color.White,
                 shape = CircleShape

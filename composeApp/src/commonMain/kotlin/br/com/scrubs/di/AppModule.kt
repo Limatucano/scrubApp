@@ -7,7 +7,7 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) {
     startKoin {
         appDeclaration()
         modules(
-            databaseModule(), // platform-specific
+            databaseModule(),
             dataModule,
             presentationModule
         )
