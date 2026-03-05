@@ -69,12 +69,8 @@ private fun HomeContent(
                 shape = CircleShape
             ) {
                 Text(
-                    text = "Adicionar"
+                    text = "+"
                 )
-//                Icon(
-//                    imageVector = Icons.Default.CameraAlt,
-//                    contentDescription = "Adicionar recibo"
-//                )
             }
         },
         containerColor = Color(0xFFF4F4FB)
@@ -88,7 +84,7 @@ private fun HomeContent(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                HeaderOrganism(title = "Olá, Daniella")
+                HeaderOrganism(title = "Olá, Daniella Corrêa :)")
             }
 
             item {

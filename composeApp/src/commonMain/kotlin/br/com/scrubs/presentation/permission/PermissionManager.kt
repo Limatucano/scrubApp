@@ -35,9 +35,9 @@ class PermissionManagerImpl(
     override val permissionsController: PermissionsController
 ) : PermissionManager {
 
-    private fun AppPermission.toMoko(): Permission = when(this) {
+    private fun AppPermission.toMoko(): Permission? = when(this) {
         AppPermission.CAMERA -> Permission.CAMERA
-        AppPermission.GALLERY -> Permission.GALLERY
+        AppPermission.GALLERY -> null
     }
 
     private fun PermissionState.toPermissionStatus(): PermissionStatus = when(this) {
@@ -54,20 +54,45 @@ class PermissionManagerImpl(
         blockDenied: () -> Unit,
         blockDeniedAlways: () -> Unit
     ) {
-        runCatching {
-            permissions.forEach {
-                permissionsController.providePermission(it.toMoko())
+        val results = mutableMapOf<AppPermission, PermissionStatus>()
+        var hasDenied = false
+        var hasDeniedAlways = false
+
+        permissions.forEach { permission ->
+            val mokoPermission = permission.toMoko()
+
+            if (mokoPermission == null) {
+                results[permission] = PermissionStatus.GRANTED
+                return@forEach
             }
-            permissions.associateWith {
-                permissionsController.getPermissionState(it.toMoko()).toPermissionStatus()
+
+            runCatching {
+                val currentState = permissionsController.getPermissionState(mokoPermission)
+                if (currentState != PermissionState.Granted) {
+                    permissionsController.providePermission(mokoPermission)
+                }
+                permissionsController.getPermissionState(mokoPermission).toPermissionStatus()
+            }.onSuccess { status ->
+                results[permission] = status
+            }.onFailure { ex ->
+                when (ex) {
+                    is DeniedAlwaysException -> {
+                        results[permission] = PermissionStatus.DENIED_ALWAYS
+                        hasDeniedAlways = true
+                    }
+                    is DeniedException -> {
+                        results[permission] = PermissionStatus.DENIED
+                        hasDenied = true
+                    }
+                }
             }
-        }.onSuccess { result ->
-            blockSuccess(result)
-        }.onFailure { ex ->
-            when (ex) {
-                is DeniedException -> blockDenied()
-                is DeniedAlwaysException -> blockDeniedAlways()
-            }
+        }
+
+        val hasAnyGranted = results.values.any { it == PermissionStatus.GRANTED }
+        when {
+            hasAnyGranted -> blockSuccess(results)
+            hasDeniedAlways -> blockDeniedAlways()
+            hasDenied -> blockDenied()
         }
     }
 
