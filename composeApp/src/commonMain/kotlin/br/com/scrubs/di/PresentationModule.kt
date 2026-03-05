@@ -1,6 +1,7 @@
 package br.com.scrubs.di
 
 import br.com.scrubs.presentation.camera.CameraScreenModule
+import br.com.scrubs.presentation.confirmation.ConfirmationScreenModel
 import br.com.scrubs.presentation.home.HomeScreenModel
 import br.com.scrubs.presentation.permission.PermissionFactory
 import br.com.scrubs.presentation.permission.PermissionManager
@@ -23,6 +24,13 @@ val presentationModule = module {
     factory {
         CameraScreenModule(
             permissionManager = get()
+        )
+    }
+
+    factory { (imageBytes: ByteArray) ->
+        ConfirmationScreenModel(
+            imageBytes = get(),
+            repository = get()
         )
     }
 }

@@ -11,5 +11,6 @@ fun getDatabase(context: Context): AppDatabase {
         name = "receipts.db"
     )
         .setDriver(BundledSQLiteDriver())
+        .fallbackToDestructiveMigration(dropAllTables = true)
         .build()
 }

@@ -16,7 +16,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.scrubs.presentation.confirmation.ConfirmationScreen
 import br.com.scrubs.presentation.permission.PermissionDeniedDialog
+import br.com.scrubs.utils.cropAndRotateImage
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -44,7 +46,9 @@ class CameraScreen : Screen {
 
         GalleryPicker(
             open = state.galleryOpen,
-            onImageSelected = {  },
+            onImageSelected = {
+                navigator?.push(ConfirmationScreen(it))
+            },
             onDismiss = { screenModel.onEvent(CameraEvent.DismissGallery) }
         )
 
@@ -53,6 +57,7 @@ class CameraScreen : Screen {
             onEvent = screenModel::onEvent,
             onClose = { navigator?.pop() },
             onGoToConfirmation = {
+                navigator?.push(ConfirmationScreen(it))
             }
         )
     }
@@ -65,19 +70,37 @@ private fun CameraContent(
     onClose: () -> Unit,
     onGoToConfirmation: (image: ByteArray) -> Unit = {}
 ) {
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF0A0E1A))
             .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
+
+        val frameSizeDp = 260.dp
+        val frameOffsetYDp = (-20).dp
+        val screenW = maxWidth
+        val screenH = maxHeight
+
+        val frameWidthRatio  = (frameSizeDp / screenW).coerceIn(0f, 1f)
+        val frameHeightRatio = (frameSizeDp / screenH).coerceIn(0f, 1f)
+        val frameCenterX = 0.5f
+        val frameCenterY = 0.5f + (frameOffsetYDp / screenH).toFloat()
+
         CameraPreview(
             modifier = Modifier.fillMaxSize(),
             isFlashOn = state.isFlashOn,
             isFrontCamera = state.isFrontCamera,
             captureRequestId = state.captureTrigger,
             onImageCaptured = {
-                onGoToConfirmation(it)
+                val image = cropAndRotateImage(
+                    bytes = it,
+                    frameCenterX = frameCenterX,
+                    frameCenterY = frameCenterY,
+                    frameWidthRatio = frameWidthRatio,
+                    frameHeightRatio = frameHeightRatio
+                )
+                onGoToConfirmation(image)
             }
         )
 
