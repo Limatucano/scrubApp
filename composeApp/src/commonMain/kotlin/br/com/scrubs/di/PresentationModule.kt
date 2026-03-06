@@ -1,5 +1,6 @@
 package br.com.scrubs.di
 
+import br.com.scrubs.domain.model.Receipt
 import br.com.scrubs.presentation.camera.CameraScreenModule
 import br.com.scrubs.presentation.confirmation.ConfirmationScreenModel
 import br.com.scrubs.presentation.home.HomeScreenModel
@@ -27,9 +28,9 @@ val presentationModule = module {
         )
     }
 
-    factory { (imageBytes: ByteArray) ->
+    factory { (receipt: Receipt) ->
         ConfirmationScreenModel(
-            imageBytes = get(),
+            initialReceipt = receipt,
             repository = get()
         )
     }

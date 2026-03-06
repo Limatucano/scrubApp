@@ -28,6 +28,7 @@ enum class FormField {
 
 data class ConfirmationState(
     val imageBitmap: ImageBitmap? = null,
+    val imageBytes: ByteArray? = null,
     val surgicalDate: String = "",
     val patientName: String = "",
     val procedure: String = "",
@@ -37,7 +38,23 @@ data class ConfirmationState(
     val paymentDate: String = "",
     val errors: Map<FormField, String> = emptyMap(),
     val isSaving: Boolean = false
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+        other as ConfirmationState
+        return surgicalDate == other.surgicalDate && patientName == other.patientName &&
+                procedure == other.procedure && healthPlan == other.healthPlan &&
+                value == other.value && isPaid == other.isPaid &&
+                paymentDate == other.paymentDate && isSaving == other.isSaving &&
+                imageBytes.contentEquals(other.imageBytes)
+    }
+    override fun hashCode(): Int {
+        var result = (imageBytes?.contentHashCode() ?: 0)
+        result = 31 * result + surgicalDate.hashCode()
+        return result
+    }
+}
 
 sealed class ConfirmationEvent {
     data class SurgicalDateChanged(val value: String) : ConfirmationEvent()
@@ -57,7 +74,7 @@ sealed class ConfirmationNavigation {
 }
 
 class ConfirmationScreenModel(
-    private val imageBytes: ByteArray,
+    private val initialReceipt: Receipt,
     private val repository: ReceiptRepository
 ) : ScreenModel {
 
@@ -71,14 +88,33 @@ class ConfirmationScreenModel(
     val focusEvent = _focusEvent.receiveAsFlow()
 
     init {
-        decodeImage()
+        screenModelScope.launch {
+            val bitmap = initialReceipt.image?.let { decodeByteArrayToImageBitmap(it) }
+            _state.update {
+                it.copy(
+                    imageBitmap = bitmap,
+                    imageBytes = initialReceipt.image,
+                    surgicalDate = initialReceipt.surgicalDate.filter { c -> c.isDigit() },
+                    patientName = initialReceipt.patientName,
+                    procedure = initialReceipt.surgicalProcedure,
+                    healthPlan = initialReceipt.healthPlan,
+                    value = (initialReceipt.value * 100).toLong().toString(),
+                    isPaid = initialReceipt.status == Status.PAID
+                )
+            }
+        }
     }
 
-    private fun decodeImage() {
-        screenModelScope.launch {
-            val bitmap = decodeByteArrayToImageBitmap(imageBytes)
-            _state.update { it.copy(imageBitmap = bitmap) }
-        }
+    fun currentReceipt(): Receipt = _state.value.let { s ->
+        initialReceipt.copy(
+            patientName = s.patientName.trim(),
+            healthPlan = s.healthPlan.trim(),
+            surgicalProcedure = s.procedure.trim(),
+            value = (s.value.toLongOrNull() ?: 0L) / 100.0,
+            surgicalDate = s.surgicalDate.toFormattedDate(),
+            status = if (s.isPaid) Status.PAID else Status.PENDING,
+            image = s.imageBytes
+        )
     }
 
     fun onEvent(event: ConfirmationEvent) {
@@ -98,17 +134,9 @@ class ConfirmationScreenModel(
             is ConfirmationEvent.PaymentDateChanged ->
                 _state.update { it.copy(paymentDate = event.value, errors = it.errors - FormField.PAYMENT_DATE) }
             ConfirmationEvent.Save -> save()
-
             ConfirmationEvent.RetakePhoto -> screenModelScope.launch {
                 _navigation.emit(ConfirmationNavigation.RetakePhoto)
             }
-        }
-    }
-
-    fun updateImage(newBytes: ByteArray) {
-        screenModelScope.launch {
-            val bitmap = decodeByteArrayToImageBitmap(newBytes)
-            _state.update { it.copy(imageBitmap = bitmap) }
         }
     }
 
@@ -119,26 +147,19 @@ class ConfirmationScreenModel(
         if (errors.isNotEmpty()) {
             _state.update { it.copy(errors = errors) }
             val firstError = FormField.entries.firstOrNull { it in errors }
-            if (firstError != null) {
-                screenModelScope.launch { _focusEvent.send(firstError) }
-            }
+            if (firstError != null) screenModelScope.launch { _focusEvent.send(firstError) }
             return
         }
 
         screenModelScope.launch {
             _state.update { it.copy(isSaving = true) }
-            runCatching {
-                repository.save(current.toReceipt())
-            }.onSuccess {
-                _navigation.emit(ConfirmationNavigation.GoBack)
-            }.onFailure {
-                _state.update { s ->
-                    s.copy(
-                        isSaving = false,
-                        errors = mapOf(FormField.PATIENT_NAME to "Erro ao salvar. Tente novamente.")
-                    )
+            runCatching { repository.save(currentReceipt()) }
+                .onSuccess { _navigation.emit(ConfirmationNavigation.GoBack) }
+                .onFailure {
+                    _state.update { s ->
+                        s.copy(isSaving = false, errors = mapOf(FormField.PATIENT_NAME to "Erro ao salvar. Tente novamente."))
+                    }
                 }
-            }
         }
     }
 
@@ -147,45 +168,36 @@ class ConfirmationScreenModel(
 
         if (state.surgicalDate.isBlank())
             errors[FormField.SURGICAL_DATE] = "Data da cirurgia obrigatória"
-        else if (!isValidDate(state.surgicalDate))
+        else if (!isValidDateDigits(state.surgicalDate))
             errors[FormField.SURGICAL_DATE] = "Data inválida. Use dd/MM/aaaa"
 
         if (state.patientName.isBlank())
             errors[FormField.PATIENT_NAME] = "Nome do paciente obrigatório"
-
         if (state.procedure.isBlank())
             errors[FormField.PROCEDURE] = "Procedimento obrigatório"
-
         if (state.healthPlan.isBlank())
             errors[FormField.HEALTH_PLAN] = "Plano de saúde obrigatório"
+        if (state.value.isBlank() || state.value.toLongOrNull() == null)
+            errors[FormField.VALUE] = "Valor obrigatório"
 
         if (state.isPaid) {
-            if (state.value.isBlank() || state.value.toLongOrNull() == null)
-                errors[FormField.VALUE] = "Valor obrigatório"
             if (state.paymentDate.isBlank())
                 errors[FormField.PAYMENT_DATE] = "Data do pagamento obrigatória"
-            else if (!isValidDate(state.paymentDate))
+            else if (!isValidDateDigits(state.paymentDate))
                 errors[FormField.PAYMENT_DATE] = "Data inválida. Use dd/MM/aaaa"
         }
 
         return errors
     }
 
-    private fun isValidDate(date: String): Boolean {
-        if (date.length != 8) return false
-        val day   = date.substring(0, 2).toIntOrNull() ?: return false
-        val month = date.substring(2, 4).toIntOrNull() ?: return false
-        val year  = date.substring(4, 8).toIntOrNull() ?: return false
+    private fun isValidDateDigits(digits: String): Boolean {
+        if (digits.length != 8) return false
+        val day   = digits.substring(0, 2).toIntOrNull() ?: return false
+        val month = digits.substring(2, 4).toIntOrNull() ?: return false
+        val year  = digits.substring(4, 8).toIntOrNull() ?: return false
         return day in 1..31 && month in 1..12 && year in 1900..2100
     }
 
-    private fun ConfirmationState.toReceipt() = Receipt(
-        patientName = patientName.trim(),
-        healthPlan = healthPlan.trim(),
-        surgicalProcedure = procedure.trim(),
-        value = (value.toLongOrNull() ?: 0L) / 100.0,
-        surgicalDate = "${surgicalDate.substring(0,2)}/${surgicalDate.substring(2,4)}/${surgicalDate.substring(4,8)}",
-        status = if (isPaid) Status.PAID else Status.PENDING,
-        image = imageBytes
-    )
+    private fun String.toFormattedDate(): String =
+        if (length == 8) "${substring(0, 2)}/${substring(2, 4)}/${substring(4, 8)}" else this
 }

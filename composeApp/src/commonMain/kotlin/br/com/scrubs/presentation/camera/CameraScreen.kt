@@ -16,18 +16,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.scrubs.domain.model.Receipt
+import br.com.scrubs.domain.model.Status
 import br.com.scrubs.presentation.confirmation.ConfirmationScreen
 import br.com.scrubs.presentation.permission.PermissionDeniedDialog
 import br.com.scrubs.utils.cropAndRotateImage
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.permissions.compose.BindEffect
 
-class CameraScreen : Screen {
+data class CameraScreen(
+    val existingReceipt: Receipt? = null
+) : Screen {
+
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.current
+        val navigator = LocalNavigator.currentOrThrow
         val screenModel = koinScreenModel<CameraScreenModule>()
         val state by screenModel.state.collectAsState()
 
@@ -46,8 +52,18 @@ class CameraScreen : Screen {
 
         GalleryPicker(
             open = state.galleryOpen,
-            onImageSelected = {
-                navigator?.push(ConfirmationScreen(it))
+            onImageSelected = { bytes ->
+                val receipt = existingReceipt?.copy(image = bytes)
+                    ?: Receipt(
+                        patientName = "",
+                        healthPlan = "",
+                        surgicalProcedure = "",
+                        value = 0.0,
+                        surgicalDate = "",
+                        status = Status.PENDING,
+                        image = bytes
+                    )
+                navigator.replace(ConfirmationScreen(receipt))
             },
             onDismiss = { screenModel.onEvent(CameraEvent.DismissGallery) }
         )
@@ -55,9 +71,19 @@ class CameraScreen : Screen {
         CameraContent(
             state = state,
             onEvent = screenModel::onEvent,
-            onClose = { navigator?.pop() },
-            onGoToConfirmation = {
-                navigator?.push(ConfirmationScreen(it))
+            onClose = { navigator.pop() },
+            onImageCaptured = { bytes ->
+                val receipt = existingReceipt?.copy(image = bytes)
+                    ?: Receipt(
+                        patientName = "",
+                        healthPlan = "",
+                        surgicalProcedure = "",
+                        value = 0.0,
+                        surgicalDate = "",
+                        status = Status.PENDING,
+                        image = bytes
+                    )
+                navigator.replace(ConfirmationScreen(receipt))
             }
         )
     }
@@ -68,7 +94,7 @@ private fun CameraContent(
     state: CameraState,
     onEvent: (CameraEvent) -> Unit,
     onClose: () -> Unit,
-    onGoToConfirmation: (image: ByteArray) -> Unit = {}
+    onImageCaptured: (ByteArray) -> Unit
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -90,15 +116,16 @@ private fun CameraContent(
             isFlashOn = state.isFlashOn,
             isFrontCamera = state.isFrontCamera,
             captureRequestId = state.captureTrigger,
-            onImageCaptured = {
-                val image = cropAndRotateImage(
-                    bytes = it,
-                    frameCenterX = frameCenterX,
-                    frameCenterY = frameCenterY,
-                    frameWidthRatio = frameWidthRatio,
-                    frameHeightRatio = frameHeightRatio
+            onImageCaptured = { raw ->
+                onImageCaptured(
+                    cropAndRotateImage(
+                        bytes = raw,
+                        frameCenterX = frameCenterX,
+                        frameCenterY = frameCenterY,
+                        frameWidthRatio = frameWidthRatio,
+                        frameHeightRatio = frameHeightRatio
+                    )
                 )
-                onGoToConfirmation(image)
             }
         )
 

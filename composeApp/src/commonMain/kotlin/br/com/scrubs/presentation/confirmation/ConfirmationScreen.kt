@@ -24,6 +24,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.scrubs.domain.model.Receipt
+import br.com.scrubs.presentation.camera.CameraScreen
 import br.com.scrubs.utils.CurrencyVisualTransformation
 import br.com.scrubs.utils.MaskVisualTransformation
 import cafe.adriel.voyager.core.screen.Screen
@@ -33,36 +35,30 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 
-data class ConfirmationScreen(val imageBytes: ByteArray) : Screen {
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null || this::class != other::class) return false
-        return imageBytes.contentEquals((other as ConfirmationScreen).imageBytes)
-    }
-
-    override fun hashCode() = imageBytes.contentHashCode()
+data class ConfirmationScreen(val receipt: Receipt) : Screen {
 
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val screenModel = koinScreenModel<ConfirmationScreenModel> { parametersOf(imageBytes) }
+        val screenModel = koinScreenModel<ConfirmationScreenModel> { parametersOf(receipt) }
         val state by screenModel.state.collectAsState()
         val scrollState = rememberScrollState()
         val scope = rememberCoroutineScope()
 
         val focusSurgicalDate = remember { FocusRequester() }
-        val focusPatientName = remember { FocusRequester() }
-        val focusProcedure = remember { FocusRequester() }
-        val focusHealthPlan = remember { FocusRequester() }
-        val focusValue = remember { FocusRequester() }
-        val focusPaymentDate = remember { FocusRequester() }
+        val focusPatientName  = remember { FocusRequester() }
+        val focusProcedure    = remember { FocusRequester() }
+        val focusHealthPlan   = remember { FocusRequester() }
+        val focusValue        = remember { FocusRequester() }
+        val focusPaymentDate  = remember { FocusRequester() }
 
         LaunchedEffect(Unit) {
             screenModel.navigation.collect { nav ->
                 when (nav) {
                     ConfirmationNavigation.GoBack -> navigator.pop()
-                    ConfirmationNavigation.RetakePhoto -> navigator.pop()
+                    ConfirmationNavigation.RetakePhoto -> {
+                        navigator.replace(CameraScreen(existingReceipt = screenModel.currentReceipt()))
+                    }
                 }
             }
         }
@@ -187,20 +183,9 @@ data class ConfirmationScreen(val imageBytes: ByteArray) : Screen {
 @Composable
 private fun ConfirmationTopBar(onBack: () -> Unit, onDelete: () -> Unit) {
     TopAppBar(
-        title = {
-            Text("Editar Cirurgia", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Color(0xFF1A1A2E))
-        },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Text("←", fontSize = 20.sp, color = Color(0xFF1A1A2E))
-            }
-        },
-        actions = {
-            IconButton(onClick = onDelete) {
-                Text("Excluir", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                //Icon(Icons.Default.Delete, contentDescription = "Excluir", tint = Color(0xFFD32F2F))
-            }
-        },
+        title = { Text("Editar Cirurgia", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Color(0xFF1A1A2E)) },
+        navigationIcon = { IconButton(onClick = onBack) { Text("←", fontSize = 20.sp, color = Color(0xFF1A1A2E)) } },
+        actions = { IconButton(onClick = onDelete) { Text("Excluir", fontSize = 12.sp, fontWeight = FontWeight.Medium) } },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
     )
 }
@@ -210,32 +195,20 @@ private fun ConfirmationBottomBar(onCancel: () -> Unit, onSave: () -> Unit, isSa
     Surface(shadowElevation = 8.dp, color = Color.White) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .navigationBarsPadding()
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).navigationBarsPadding()
         ) {
             OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(10.dp),
+                onClick = onCancel, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp),
                 border = BorderStroke(1.dp, Color(0xFFDDDDDD)),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF5A5A8A))
-            ) {
-                Text("Cancelar", fontWeight = FontWeight.Medium)
-            }
+            ) { Text("Cancelar", fontWeight = FontWeight.Medium) }
             Button(
-                onClick = onSave,
-                enabled = !isSaving,
-                modifier = Modifier.weight(1f),
+                onClick = onSave, enabled = !isSaving, modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32), contentColor = Color.White)
             ) {
-                if (isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
-                } else {
-                    Text("Salvar Cirurgia", fontWeight = FontWeight.SemiBold)
-                }
+                if (isSaving) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                else Text("Salvar Cirurgia", fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -246,32 +219,16 @@ private fun ImagePreviewCard(bitmap: ImageBitmap?, onRetakePhoto: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.White)
-            .padding(12.dp)
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).padding(12.dp)
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(72.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFFF0F0FA))
+            modifier = Modifier.size(72.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFF0F0FA))
         ) {
             if (bitmap != null) {
-                Image(
-                    bitmap = bitmap,
-                    contentDescription = "Imagem capturada",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Text("Tirar Novamente", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                //Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color(0xFFAAAAAA), modifier = Modifier.size(28.dp))
+                Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
             }
         }
-
         Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
             Text("Imagem Selecionada", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1A1A2E))
             Text("Etiqueta capturada da cirurgia", fontSize = 12.sp, color = Color(0xFF8A8AAD))
@@ -283,8 +240,6 @@ private fun ImagePreviewCard(bitmap: ImageBitmap?, onRetakePhoto: () -> Unit) {
                 border = BorderStroke(1.dp, Color(0xFF4A4AE8)),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF4A4AE8))
             ) {
-//                Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(14.dp))
-//                Spacer(modifier = Modifier.width(4.dp))
                 Text("Tirar Novamente", fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
         }
