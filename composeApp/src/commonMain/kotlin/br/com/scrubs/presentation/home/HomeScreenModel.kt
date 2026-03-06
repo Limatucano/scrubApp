@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 data class HomeState(
     val receipts: List<Receipt> = emptyList(),
     val selectedFilter: DateFilter = DateFilter.DAYS_30,
+    val showDatePicker: Boolean = false,
     val isLoading: Boolean = false
 ) {
     val totalPending: Double
@@ -51,8 +52,17 @@ class HomeScreenModel(
     fun onEvent(event: HomeEvent) {
         when (event) {
             is HomeEvent.FilterChanged -> {
-                _state.update { it.copy(selectedFilter = event.filter) }
+                _state.update {
+                    it.copy(
+                        selectedFilter = event.filter,
+                        showDatePicker = event.filter == DateFilter.CUSTOM
+                    )
+                }
             }
         }
+    }
+
+    fun dismissDatePicker() {
+        _state.update { it.copy(showDatePicker = false) }
     }
 }

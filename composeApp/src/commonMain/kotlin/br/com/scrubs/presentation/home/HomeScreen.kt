@@ -34,6 +34,7 @@ import br.com.scrubs.presentation.confirmation.ConfirmationScreen
 import br.com.scrubs.presentation.home.components.AmountMolecule
 import br.com.scrubs.presentation.home.components.HeaderOrganism
 import br.com.scrubs.presentation.home.components.ReceiptItemMolecule
+import br.com.scrubs.presentation.home.components.ScrubsDateRangePicker
 import br.com.scrubs.utils.parseToDayMonth
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
@@ -45,6 +46,15 @@ class HomeScreen : Screen {
         val screenModel = koinScreenModel<HomeScreenModel>()
         val state by screenModel.state.collectAsState()
         val navigator = LocalNavigator.current
+
+        if (state.showDatePicker) {
+            ScrubsDateRangePicker(
+                onDismiss = screenModel::dismissDatePicker,
+                onConfirm = { (startMillis, endMillis) ->
+                    screenModel.dismissDatePicker()
+                }
+            )
+        }
 
         HomeContent(
             state = state,
