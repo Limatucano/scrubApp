@@ -82,7 +82,7 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
             topBar = {
                 ConfirmationTopBar(
                     onBack = { navigator.pop() },
-                    onDelete = { navigator.pop() }
+                    onDelete = { screenModel.onEvent(ConfirmationEvent.Delete) }
                 )
             },
             bottomBar = {

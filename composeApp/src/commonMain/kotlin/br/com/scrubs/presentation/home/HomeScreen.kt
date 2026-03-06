@@ -28,7 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.scrubs.domain.model.DateFilter
+import br.com.scrubs.domain.model.Receipt
 import br.com.scrubs.presentation.camera.CameraScreen
+import br.com.scrubs.presentation.confirmation.ConfirmationScreen
 import br.com.scrubs.presentation.home.components.AmountMolecule
 import br.com.scrubs.presentation.home.components.HeaderOrganism
 import br.com.scrubs.presentation.home.components.ReceiptItemMolecule
@@ -47,7 +49,8 @@ class HomeScreen : Screen {
         HomeContent(
             state = state,
             onEvent = screenModel::onEvent,
-            onAddClick = { navigator?.push(CameraScreen()) }
+            onAddClick = { navigator?.push(CameraScreen()) },
+            onEditClick = { navigator?.push(ConfirmationScreen(it)) }
         )
     }
 }
@@ -56,7 +59,8 @@ class HomeScreen : Screen {
 private fun HomeContent(
     state: HomeState,
     onAddClick: () -> Unit,
-    onEvent: (HomeEvent) -> Unit
+    onEvent: (HomeEvent) -> Unit,
+    onEditClick: (Receipt) -> Unit
 ) {
     val backgroundColor = Color(0xFFF4F4FB)
 
@@ -80,7 +84,12 @@ private fun HomeContent(
                 .fillMaxSize()
                 .background(backgroundColor)
                 .padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
+            contentPadding = PaddingValues(
+                start = 20.dp,
+                end = 20.dp,
+                top = 24.dp,
+                bottom = 80.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
@@ -122,7 +131,7 @@ private fun HomeContent(
                         surgicalProcedure = receipt.surgicalProcedure,
                         value = receipt.value,
                         status = receipt.status,
-                        onEditClick = { onEvent(HomeEvent.EditReceipt(receipt)) }
+                        onEditClick = { onEditClick(receipt) }
                     )
                 }
             }

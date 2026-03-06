@@ -18,12 +18,11 @@ data class HomeState(
     val isLoading: Boolean = false
 ) {
     val totalPending: Double
-        get() = receipts.filter { it.status == Status.PAID }.sumOf { it.value }
+        get() = receipts.filter { it.status == Status.PENDING }.sumOf { it.value }
 }
 
 sealed class HomeEvent {
     data class FilterChanged(val filter: DateFilter) : HomeEvent()
-    data class EditReceipt(val receipt: Receipt) : HomeEvent()
 }
 
 class HomeScreenModel(
@@ -49,9 +48,6 @@ class HomeScreenModel(
         when (event) {
             is HomeEvent.FilterChanged -> {
                 _state.update { it.copy(selectedFilter = event.filter) }
-            }
-            is HomeEvent.EditReceipt -> {
-                // Navigate to edit screen — handle via navigator in HomeScreen
             }
         }
     }

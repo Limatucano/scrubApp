@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.scrubs.domain.model.Status
-import br.com.scrubs.domain.model.Status.Companion.isPaid
 import br.com.scrubs.utils.formatCurrency
 
 private val CardBackground = Color.White
@@ -43,7 +42,7 @@ fun ReceiptItemMolecule(
     surgicalProcedure: String,
     value: Double,
     status: Status,
-    onEditClick: (() -> Unit)? = null,
+    onEditClick: (() -> Unit) = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -105,6 +104,15 @@ fun ReceiptItemMolecule(
                 fontWeight = FontWeight.Normal
             )
 
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Text(
+                text = healthPlan,
+                fontSize = 13.sp,
+                color = ProcedureColor,
+                fontWeight = FontWeight.Normal
+            )
+
             Spacer(modifier = Modifier.height(6.dp))
 
             Row(
@@ -118,26 +126,23 @@ fun ReceiptItemMolecule(
                     fontWeight = FontWeight.SemiBold,
                     color = AmountColor
                 )
-
-                if (!status.isPaid() && onEditClick != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.clickable { onEditClick() }
-                    ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.clickable { onEditClick() }
+                ) {
 //                        Icon(
 //                            imageVector = Icon,
 //                            contentDescription = "Editar",
 //                            tint = EditColor,
 //                            modifier = Modifier.size(14.dp)
 //                        )
-                        Text(
-                            text = "Editar",
-                            fontSize = 13.sp,
-                            color = EditColor,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+                    Text(
+                        text = "Editar",
+                        fontSize = 13.sp,
+                        color = EditColor,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }

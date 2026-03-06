@@ -66,6 +66,7 @@ sealed class ConfirmationEvent {
     data class PaymentDateChanged(val value: String) : ConfirmationEvent()
     object Save : ConfirmationEvent()
     object RetakePhoto : ConfirmationEvent()
+    object Delete : ConfirmationEvent()
 }
 
 sealed class ConfirmationNavigation {
@@ -105,18 +106,6 @@ class ConfirmationScreenModel(
         }
     }
 
-    fun currentReceipt(): Receipt = _state.value.let { s ->
-        initialReceipt.copy(
-            patientName = s.patientName.trim(),
-            healthPlan = s.healthPlan.trim(),
-            surgicalProcedure = s.procedure.trim(),
-            value = (s.value.toLongOrNull() ?: 0L) / 100.0,
-            surgicalDate = s.surgicalDate.toFormattedDate(),
-            status = if (s.isPaid) Status.PAID else Status.PENDING,
-            image = s.imageBytes
-        )
-    }
-
     fun onEvent(event: ConfirmationEvent) {
         when (event) {
             is ConfirmationEvent.SurgicalDateChanged ->
@@ -137,6 +126,32 @@ class ConfirmationScreenModel(
             ConfirmationEvent.RetakePhoto -> screenModelScope.launch {
                 _navigation.emit(ConfirmationNavigation.RetakePhoto)
             }
+            ConfirmationEvent.Delete -> delete()
+        }
+    }
+
+    fun currentReceipt(): Receipt = _state.value.let { s ->
+        initialReceipt.copy(
+            patientName = s.patientName.trim(),
+            healthPlan = s.healthPlan.trim(),
+            surgicalProcedure = s.procedure.trim(),
+            value = (s.value.toLongOrNull() ?: 0L) / 100.0,
+            surgicalDate = s.surgicalDate.toFormattedDate(),
+            status = if (s.isPaid) Status.PAID else Status.PENDING,
+            image = s.imageBytes
+        )
+    }
+
+    private fun delete() {
+        screenModelScope.launch {
+            _state.update { it.copy(isSaving = true) }
+            runCatching { repository.remove(currentReceipt()) }
+                .onSuccess { _navigation.emit(ConfirmationNavigation.GoBack) }
+                .onFailure {
+                    _state.update { s ->
+                        s.copy(isSaving = false, errors = mapOf(FormField.PATIENT_NAME to "Erro ao deletar. Tente novamente."))
+                    }
+                }
         }
     }
 
