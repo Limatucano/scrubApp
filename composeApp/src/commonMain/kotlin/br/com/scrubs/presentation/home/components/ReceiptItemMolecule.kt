@@ -37,6 +37,7 @@ private val EditColor = Color(0xFF4A4AE8)
 fun ReceiptItemMolecule(
     day: String,
     month: String,
+    year: String,
     patientName: String,
     healthPlan: String,
     surgicalProcedure: String,
@@ -75,6 +76,12 @@ fun ReceiptItemMolecule(
                 fontWeight = FontWeight.Medium,
                 color = DateMonthColor
             )
+            Text(
+                text = year.uppercase(),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = DateMonthColor
+            )
         }
 
         Spacer(modifier = Modifier.width(14.dp))
@@ -103,8 +110,6 @@ fun ReceiptItemMolecule(
                 color = ProcedureColor,
                 fontWeight = FontWeight.Normal
             )
-
-            Spacer(modifier = Modifier.height(2.dp))
 
             Text(
                 text = healthPlan,

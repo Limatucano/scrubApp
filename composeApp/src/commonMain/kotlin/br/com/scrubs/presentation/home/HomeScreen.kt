@@ -21,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -51,7 +52,7 @@ class HomeScreen : Screen {
             ScrubsDateRangePicker(
                 onDismiss = screenModel::dismissDatePicker,
                 onConfirm = { (startMillis, endMillis) ->
-                    screenModel.dismissDatePicker()
+                    screenModel.onEvent(HomeEvent.CustomDateSelected(startMillis, endMillis))
                 }
             )
         }
@@ -123,6 +124,7 @@ private fun HomeContent(
             item {
                 DateFilterRow(
                     selectedFilter = state.selectedFilter,
+                    customFilterLabel = state.customFilterLabel,
                     onFilterSelected = { onEvent(HomeEvent.FilterChanged(it)) }
                 )
             }
@@ -131,18 +133,19 @@ private fun HomeContent(
                 item {
                     Box(
                         modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = androidx.compose.ui.Alignment.Center
+                        contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = Color(0xFF4A4AE8))
                     }
                 }
             } else {
                 items(state.receipts, key = { it.id }) { receipt ->
-                    val (day, month) = receipt.surgicalDate.parseToDayMonth()
+                    val (day, month, year) = receipt.surgicalDate.parseToDayMonth()
 
                     ReceiptItemMolecule(
                         day = day,
                         month = month,
+                        year = year,
                         patientName = receipt.patientName,
                         healthPlan = receipt.healthPlan,
                         surgicalProcedure = receipt.surgicalProcedure,
@@ -159,6 +162,7 @@ private fun HomeContent(
 @Composable
 private fun DateFilterRow(
     selectedFilter: DateFilter,
+    customFilterLabel: String,
     onFilterSelected: (DateFilter) -> Unit
 ) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -167,18 +171,13 @@ private fun DateFilterRow(
             val containerColor = if (isSelected) Color(0xFF4A4AE8) else Color.White
             val textColor = if (isSelected) Color.White else Color(0xFF5A5A8A)
 
+            val label = if (filter == DateFilter.CUSTOM) customFilterLabel else filter.label
+
             Box(
-                contentAlignment = androidx.compose.ui.Alignment.Center,
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
                     .background(containerColor)
-                    .let {
-                        if (!isSelected) it
-                            .then(
-                                Modifier.background(Color.White, RoundedCornerShape(20.dp))
-                            )
-                        else it
-                    }
             ) {
                 TextButton(
                     onClick = { onFilterSelected(filter) },
@@ -190,7 +189,7 @@ private fun DateFilterRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = filter.label,
+                        text = label,
                         fontSize = 13.sp,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                     )

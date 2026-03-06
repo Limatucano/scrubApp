@@ -14,6 +14,7 @@ data class ReceiptEntity(
     val value: Double,
     val surgicalDate: String,
     val isPaid: Boolean,
+    val paymentDate: String? = null,
     @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
     val imageBytes: ByteArray? = null
 ) {
@@ -30,6 +31,7 @@ data class ReceiptEntity(
         if (healthPlan != other.healthPlan) return false
         if (surgicalProcedure != other.surgicalProcedure) return false
         if (surgicalDate != other.surgicalDate) return false
+        if (paymentDate != other.paymentDate) return false
         if (!imageBytes.contentEquals(other.imageBytes)) return false
 
         return true
@@ -43,6 +45,7 @@ data class ReceiptEntity(
         result = 31 * result + healthPlan.hashCode()
         result = 31 * result + surgicalProcedure.hashCode()
         result = 31 * result + surgicalDate.hashCode()
+        result = 31 * result + (paymentDate?.hashCode() ?: 0)
         result = 31 * result + (imageBytes?.contentHashCode() ?: 0)
         return result
     }

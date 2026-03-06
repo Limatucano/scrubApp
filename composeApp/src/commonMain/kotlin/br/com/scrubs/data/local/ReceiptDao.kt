@@ -16,4 +16,15 @@ interface ReceiptDao {
 
     @Update
     suspend fun update(receipt: ReceiptEntity)
+
+    @Query("""
+        SELECT * FROM receipts
+        WHERE (
+            SUBSTR(surgicalDate, 7, 4) || '-' ||
+            SUBSTR(surgicalDate, 4, 2) || '-' ||
+            SUBSTR(surgicalDate, 1, 2)
+        ) BETWEEN :startDate AND :endDate
+        ORDER BY surgicalDate DESC
+    """)
+    fun getByDateRange(startDate: String, endDate: String): Flow<List<ReceiptEntity>>
 }
