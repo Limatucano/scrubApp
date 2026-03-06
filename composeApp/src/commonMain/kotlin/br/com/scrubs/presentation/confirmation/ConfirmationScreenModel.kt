@@ -18,12 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 enum class FormField {
-    SURGICAL_DATE,
-    PATIENT_NAME,
-    PROCEDURE,
-    HEALTH_PLAN,
-    VALUE,
-    PAYMENT_DATE
+    SURGICAL_DATE, PATIENT_NAME, PROCEDURE, HEALTH_PLAN, VALUE, PAYMENT_DATE
 }
 
 data class ConfirmationState(
@@ -37,7 +32,10 @@ data class ConfirmationState(
     val isPaid: Boolean = false,
     val paymentDate: String = "",
     val errors: Map<FormField, String> = emptyMap(),
-    val isSaving: Boolean = false
+    val isSaving: Boolean = false,
+    // Sugestões carregadas do banco
+    val healthPlanSuggestions: List<String> = emptyList(),
+    val procedureSuggestions: List<String> = emptyList()
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -47,10 +45,13 @@ data class ConfirmationState(
                 procedure == other.procedure && healthPlan == other.healthPlan &&
                 value == other.value && isPaid == other.isPaid &&
                 paymentDate == other.paymentDate && isSaving == other.isSaving &&
+                healthPlanSuggestions == other.healthPlanSuggestions &&
+                procedureSuggestions == other.procedureSuggestions &&
                 imageBytes.contentEquals(other.imageBytes)
     }
+
     override fun hashCode(): Int {
-        var result = (imageBytes?.contentHashCode() ?: 0)
+        var result = imageBytes?.contentHashCode() ?: 0
         result = 31 * result + surgicalDate.hashCode()
         return result
     }
@@ -91,6 +92,11 @@ class ConfirmationScreenModel(
     init {
         screenModelScope.launch {
             val bitmap = initialReceipt.image?.let { decodeByteArrayToImageBitmap(it) }
+
+            // Carrega sugestões e pré-popula formulário em paralelo
+            val healthPlans = repository.getDistinctHealthPlans()
+            val procedures  = repository.getDistinctProcedures()
+
             _state.update {
                 it.copy(
                     imageBitmap = bitmap,
@@ -100,7 +106,10 @@ class ConfirmationScreenModel(
                     procedure = initialReceipt.surgicalProcedure,
                     healthPlan = initialReceipt.healthPlan,
                     value = (initialReceipt.value * 100).toLong().toString(),
-                    isPaid = initialReceipt.status == Status.PAID
+                    isPaid = initialReceipt.status == Status.PAID,
+                    paymentDate = initialReceipt.paymentDate?.filter { c -> c.isDigit() } ?: "",
+                    healthPlanSuggestions = healthPlans,
+                    procedureSuggestions = procedures
                 )
             }
         }
@@ -137,6 +146,7 @@ class ConfirmationScreenModel(
             surgicalProcedure = s.procedure.trim(),
             value = (s.value.toLongOrNull() ?: 0L) / 100.0,
             surgicalDate = s.surgicalDate.toFormattedDate(),
+            paymentDate = if (s.isPaid) s.paymentDate.toFormattedDate() else null,
             status = if (s.isPaid) Status.PAID else Status.PENDING,
             image = s.imageBytes
         )
@@ -170,11 +180,7 @@ class ConfirmationScreenModel(
             _state.update { it.copy(isSaving = true) }
             runCatching { repository.save(currentReceipt()) }
                 .onSuccess { _navigation.emit(ConfirmationNavigation.GoBack) }
-                .onFailure {
-                    _state.update { s ->
-                        s.copy(isSaving = false, errors = mapOf(FormField.PATIENT_NAME to "Erro ao salvar. Tente novamente."))
-                    }
-                }
+                .onFailure { _state.update { s -> s.copy(isSaving = false, errors = mapOf(FormField.PATIENT_NAME to "Erro ao salvar. Tente novamente.")) } }
         }
     }
 
@@ -186,12 +192,9 @@ class ConfirmationScreenModel(
         else if (!isValidDateDigits(state.surgicalDate))
             errors[FormField.SURGICAL_DATE] = "Data inválida. Use dd/MM/aaaa"
 
-        if (state.patientName.isBlank())
-            errors[FormField.PATIENT_NAME] = "Nome do paciente obrigatório"
-        if (state.procedure.isBlank())
-            errors[FormField.PROCEDURE] = "Procedimento obrigatório"
-        if (state.healthPlan.isBlank())
-            errors[FormField.HEALTH_PLAN] = "Plano de saúde obrigatório"
+        if (state.patientName.isBlank()) errors[FormField.PATIENT_NAME] = "Nome do paciente obrigatório"
+        if (state.procedure.isBlank())   errors[FormField.PROCEDURE]     = "Procedimento obrigatório"
+        if (state.healthPlan.isBlank())  errors[FormField.HEALTH_PLAN]   = "Plano de saúde obrigatório"
         if (state.value.isBlank() || state.value.toLongOrNull() == null)
             errors[FormField.VALUE] = "Valor obrigatório"
 

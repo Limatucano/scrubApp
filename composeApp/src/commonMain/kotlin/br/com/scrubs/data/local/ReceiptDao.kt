@@ -14,9 +14,6 @@ interface ReceiptDao {
     @Delete
     suspend fun delete(receipt: ReceiptEntity)
 
-    @Update
-    suspend fun update(receipt: ReceiptEntity)
-
     @Query("""
         SELECT * FROM receipts
         WHERE (
@@ -27,4 +24,10 @@ interface ReceiptDao {
         ORDER BY surgicalDate DESC
     """)
     fun getByDateRange(startDate: String, endDate: String): Flow<List<ReceiptEntity>>
+
+    @Query("SELECT DISTINCT healthPlan FROM receipts WHERE healthPlan != '' ORDER BY healthPlan ASC")
+    suspend fun getDistinctHealthPlans(): List<String>
+
+    @Query("SELECT DISTINCT surgicalProcedure FROM receipts WHERE surgicalProcedure != '' ORDER BY surgicalProcedure ASC")
+    suspend fun getDistinctProcedures(): List<String>
 }

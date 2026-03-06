@@ -15,9 +15,9 @@ class ReceiptRepositoryImpl(
 ): ReceiptRepository {
 
     override suspend fun save(receipt: Receipt) = dao.insert(receipt.toEntity())
-
     override suspend fun remove(receipt: Receipt) = dao.delete(receipt.toEntity())
-
+    override suspend fun getDistinctHealthPlans() = dao.getDistinctHealthPlans()
+    override suspend fun getDistinctProcedures() = dao.getDistinctProcedures()
     override fun getReceipts(
         filter: DateFilter,
         customRange: Pair<Long, Long>?

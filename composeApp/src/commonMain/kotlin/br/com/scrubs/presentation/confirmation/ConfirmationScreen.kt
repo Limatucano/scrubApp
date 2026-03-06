@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.scrubs.domain.model.Receipt
 import br.com.scrubs.presentation.camera.CameraScreen
+import br.com.scrubs.presentation.confirmation.components.AutoCompleteField
 import br.com.scrubs.utils.CurrencyVisualTransformation
 import br.com.scrubs.utils.MaskVisualTransformation
 import br.com.scrubs.utils.saveImageToGallery
@@ -140,18 +141,20 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
                         capitalization = KeyboardCapitalization.Words,
                         onValueChange = { screenModel.onEvent(ConfirmationEvent.PatientNameChanged(it)) }
                     )
-                    FormTextField(
+                    AutoCompleteField(
                         label = "Procedimento",
                         value = state.procedure,
+                        suggestions = state.procedureSuggestions,
                         error = state.errors[FormField.PROCEDURE],
                         focusRequester = focusProcedure,
                         nextFocusRequester = focusHealthPlan,
                         capitalization = KeyboardCapitalization.Sentences,
                         onValueChange = { screenModel.onEvent(ConfirmationEvent.ProcedureChanged(it)) }
                     )
-                    FormTextField(
+                    AutoCompleteField(
                         label = "Plano de Saúde",
                         value = state.healthPlan,
+                        suggestions = state.healthPlanSuggestions,
                         error = state.errors[FormField.HEALTH_PLAN],
                         focusRequester = focusHealthPlan,
                         nextFocusRequester = focusValue,
