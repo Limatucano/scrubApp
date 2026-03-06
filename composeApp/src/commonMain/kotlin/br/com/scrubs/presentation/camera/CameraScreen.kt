@@ -101,16 +101,6 @@ private fun CameraContent(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
-        val frameSizeDp = 260.dp
-        val frameOffsetYDp = (-20).dp
-        val screenW = maxWidth
-        val screenH = maxHeight
-
-        val frameWidthRatio  = (frameSizeDp / screenW).coerceIn(0f, 1f)
-        val frameHeightRatio = (frameSizeDp / screenH).coerceIn(0f, 1f)
-        val frameCenterX = 0.5f
-        val frameCenterY = 0.5f + (frameOffsetYDp / screenH).toFloat()
-
         CameraPreview(
             modifier = Modifier.fillMaxSize(),
             isFlashOn = state.isFlashOn,
@@ -120,10 +110,7 @@ private fun CameraContent(
                 onImageCaptured(
                     cropAndRotateImage(
                         bytes = raw,
-                        frameCenterX = frameCenterX,
-                        frameCenterY = frameCenterY,
-                        frameWidthRatio = frameWidthRatio,
-                        frameHeightRatio = frameHeightRatio
+                        isFront = state.isFrontCamera
                     )
                 )
             }

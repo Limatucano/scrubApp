@@ -9,5 +9,8 @@
 
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Precisamos acessar sua galeria para importar uma foto da etiqueta.</string>
+
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Usado para salvar etiquetas cirúrgicas na galeria.</string>
 </dict>
 </plist>

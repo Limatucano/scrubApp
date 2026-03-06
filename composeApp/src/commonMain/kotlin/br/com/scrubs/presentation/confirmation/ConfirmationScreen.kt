@@ -28,6 +28,8 @@ import br.com.scrubs.domain.model.Receipt
 import br.com.scrubs.presentation.camera.CameraScreen
 import br.com.scrubs.utils.CurrencyVisualTransformation
 import br.com.scrubs.utils.MaskVisualTransformation
+import br.com.scrubs.utils.saveImageToGallery
+import br.com.scrubs.utils.shareImage
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -44,6 +46,8 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
         val state by screenModel.state.collectAsState()
         val scrollState = rememberScrollState()
         val scope = rememberCoroutineScope()
+        var showImagePreview by remember { mutableStateOf(false) }
+
 
         val focusSurgicalDate = remember { FocusRequester() }
         val focusPatientName  = remember { FocusRequester() }
@@ -78,9 +82,19 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
             }
         }
 
+        state.imageBitmap.takeIf { showImagePreview }?.let { bitmap ->
+            FullScreenImagePreview(
+                bitmap = bitmap,
+                onDismiss = { showImagePreview = false },
+                onShare = { state.imageBytes?.let { shareImage(it, "etiqueta_cirurgica.jpg") } },
+                onDownload = { state.imageBytes?.let { saveImageToGallery(it) } }
+            )
+        }
+
         Scaffold(
             topBar = {
                 ConfirmationTopBar(
+                    isEditing = receipt.patientName.isNotBlank(),
                     onBack = { navigator.pop() },
                     onDelete = { screenModel.onEvent(ConfirmationEvent.Delete) }
                 )
@@ -104,7 +118,8 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
             ) {
                 ImagePreviewCard(
                     bitmap = state.imageBitmap,
-                    onRetakePhoto = { screenModel.onEvent(ConfirmationEvent.RetakePhoto) }
+                    onRetakePhoto = { screenModel.onEvent(ConfirmationEvent.RetakePhoto) },
+                    onImageClick = { showImagePreview = true }
                 )
 
                 FormSection(title = "Informações da Cirurgia", accentColor = Color(0xFF4A4AE8)) {
@@ -181,11 +196,40 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ConfirmationTopBar(onBack: () -> Unit, onDelete: () -> Unit) {
+private fun ConfirmationTopBar(
+    isEditing: Boolean = false,
+    onBack: () -> Unit,
+    onDelete: () -> Unit
+) {
     TopAppBar(
-        title = { Text("Editar Cirurgia", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Color(0xFF1A1A2E)) },
-        navigationIcon = { IconButton(onClick = onBack) { Text("←", fontSize = 20.sp, color = Color(0xFF1A1A2E)) } },
-        actions = { IconButton(onClick = onDelete) { Text("Excluir", fontSize = 12.sp, fontWeight = FontWeight.Medium) } },
+        title = {
+            Text(
+                text = "Editar Cirurgia",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 18.sp,
+                color = Color(0xFF1A1A2E)
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Text(
+                    text = "←",
+                    fontSize = 20.sp,
+                    color = Color(0xFF1A1A2E)
+                )
+            }
+        },
+        actions = {
+            if (isEditing) {
+                IconButton(onClick = onDelete) {
+                    Text(
+                        text = "Excluir",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
     )
 }
@@ -215,11 +259,20 @@ private fun ConfirmationBottomBar(onCancel: () -> Unit, onSave: () -> Unit, isSa
 }
 
 @Composable
-private fun ImagePreviewCard(bitmap: ImageBitmap?, onRetakePhoto: () -> Unit) {
+private fun ImagePreviewCard(
+    bitmap: ImageBitmap?,
+    onImageClick: () -> Unit,
+    onRetakePhoto: () -> Unit
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).padding(12.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White)
+            .padding(12.dp)
+            .clickable(enabled = bitmap != null) { onImageClick() }
     ) {
         Box(
             contentAlignment = Alignment.Center,
