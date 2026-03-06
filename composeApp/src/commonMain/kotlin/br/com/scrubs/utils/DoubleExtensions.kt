@@ -1,9 +1,11 @@
 package br.com.scrubs.utils
 
+import kotlin.math.roundToInt
+
 fun Double.formatCurrency(): String {
     val absValue = kotlin.math.abs(this)
     val intPart = absValue.toLong()
-    val decimalPart = ((absValue - intPart) * 100).toInt()
+    val decimalPart = ((absValue - intPart) * 100).roundToInt()
 
     val intFormatted = intPart.toString()
         .reversed()
@@ -11,6 +13,5 @@ fun Double.formatCurrency(): String {
         .joinToString(".")
         .reversed()
 
-    val decimalFormatted = decimalPart.toString().padStart(2, '0')
-    return "R\$ $intFormatted,$decimalFormatted"
+    return "R\$ $intFormatted,${decimalPart.toString().padStart(2, '0')}"
 }

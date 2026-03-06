@@ -20,8 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.scrubs.utils.formatCurrency
 
-private val GradientStart = Color(0xFF4A4AE8)
-private val GradientEnd = Color(0xFF7B5EA7)
+val GradientStart = Color(0xFF4A4AE8)
+val GradientEnd = Color(0xFF7B5EA7)
 private val AmountTextColor = Color.White
 private val LabelColor = Color(0xCCFFFFFF)
 
@@ -48,8 +48,8 @@ fun AmountMolecule(
             Text(
                 text = label,
                 color = LabelColor,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Normal
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(

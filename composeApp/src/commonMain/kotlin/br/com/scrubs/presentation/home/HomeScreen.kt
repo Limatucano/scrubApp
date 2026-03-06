@@ -33,6 +33,8 @@ import br.com.scrubs.domain.model.Receipt
 import br.com.scrubs.presentation.camera.CameraScreen
 import br.com.scrubs.presentation.confirmation.ConfirmationScreen
 import br.com.scrubs.presentation.home.components.AmountMolecule
+import br.com.scrubs.presentation.home.components.GradientEnd
+import br.com.scrubs.presentation.home.components.GradientStart
 import br.com.scrubs.presentation.home.components.HeaderOrganism
 import br.com.scrubs.presentation.home.components.ReceiptItemMolecule
 import br.com.scrubs.presentation.home.components.ScrubsDateRangePicker
