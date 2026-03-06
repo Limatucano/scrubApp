@@ -32,8 +32,6 @@ data class ConfirmationState(
     val patientName: String = "",
     val procedure: String = "",
     val healthPlan: String = "",
-    val age: String = "",
-    val gender: String = "",
     val value: String = "",
     val isPaid: Boolean = false,
     val paymentDate: String = "",
@@ -50,10 +48,12 @@ sealed class ConfirmationEvent {
     data class IsPaidChanged(val value: Boolean) : ConfirmationEvent()
     data class PaymentDateChanged(val value: String) : ConfirmationEvent()
     object Save : ConfirmationEvent()
+    object RetakePhoto : ConfirmationEvent()
 }
 
 sealed class ConfirmationNavigation {
     object GoBack : ConfirmationNavigation()
+    object RetakePhoto : ConfirmationNavigation()
 }
 
 class ConfirmationScreenModel(
@@ -67,7 +67,6 @@ class ConfirmationScreenModel(
     private val _navigation = MutableSharedFlow<ConfirmationNavigation>()
     val navigation = _navigation.asSharedFlow()
 
-    // Channel para foco — garante entrega mesmo se a UI ainda não está coletando
     private val _focusEvent = Channel<FormField>(Channel.BUFFERED)
     val focusEvent = _focusEvent.receiveAsFlow()
 
@@ -99,6 +98,17 @@ class ConfirmationScreenModel(
             is ConfirmationEvent.PaymentDateChanged ->
                 _state.update { it.copy(paymentDate = event.value, errors = it.errors - FormField.PAYMENT_DATE) }
             ConfirmationEvent.Save -> save()
+
+            ConfirmationEvent.RetakePhoto -> screenModelScope.launch {
+                _navigation.emit(ConfirmationNavigation.RetakePhoto)
+            }
+        }
+    }
+
+    fun updateImage(newBytes: ByteArray) {
+        screenModelScope.launch {
+            val bitmap = decodeByteArrayToImageBitmap(newBytes)
+            _state.update { it.copy(imageBitmap = bitmap) }
         }
     }
 
@@ -149,10 +159,9 @@ class ConfirmationScreenModel(
         if (state.healthPlan.isBlank())
             errors[FormField.HEALTH_PLAN] = "Plano de saúde obrigatório"
 
-        if (state.value.isBlank() || state.value.toLongOrNull() == null)
-            errors[FormField.VALUE] = "Valor obrigatório"
-
         if (state.isPaid) {
+            if (state.value.isBlank() || state.value.toLongOrNull() == null)
+                errors[FormField.VALUE] = "Valor obrigatório"
             if (state.paymentDate.isBlank())
                 errors[FormField.PAYMENT_DATE] = "Data do pagamento obrigatória"
             else if (!isValidDate(state.paymentDate))
@@ -163,11 +172,10 @@ class ConfirmationScreenModel(
     }
 
     private fun isValidDate(date: String): Boolean {
-        if (!date.matches(Regex("""\d{2}/\d{2}/\d{4}"""))) return false
-        val parts = date.split("/")
-        val day = parts[0].toIntOrNull() ?: return false
-        val month = parts[1].toIntOrNull() ?: return false
-        val year = parts[2].toIntOrNull() ?: return false
+        if (date.length != 8) return false
+        val day   = date.substring(0, 2).toIntOrNull() ?: return false
+        val month = date.substring(2, 4).toIntOrNull() ?: return false
+        val year  = date.substring(4, 8).toIntOrNull() ?: return false
         return day in 1..31 && month in 1..12 && year in 1900..2100
     }
 
@@ -176,7 +184,8 @@ class ConfirmationScreenModel(
         healthPlan = healthPlan.trim(),
         surgicalProcedure = procedure.trim(),
         value = (value.toLongOrNull() ?: 0L) / 100.0,
-        surgicalDate = surgicalDate,
-        status = if (isPaid) Status.PAID else Status.PENDING
+        surgicalDate = "${surgicalDate.substring(0,2)}/${surgicalDate.substring(2,4)}/${surgicalDate.substring(4,8)}",
+        status = if (isPaid) Status.PAID else Status.PENDING,
+        image = imageBytes
     )
 }

@@ -73,10 +73,8 @@ private fun CameraContent(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0A0E1A))
             .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
-
         val frameSizeDp = 260.dp
         val frameOffsetYDp = (-20).dp
         val screenW = maxWidth
