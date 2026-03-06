@@ -18,7 +18,11 @@ data class HomeState(
     val isLoading: Boolean = false
 ) {
     val totalPending: Double
-        get() = receipts.filter { it.status == Status.PENDING }.sumOf { it.value }
+        get() = receipts.sumOf { receipt -> if (receipt.status == Status.PENDING) receipt.value else 0.0 }
+
+    val totalPaid: Double
+        get() = receipts.sumOf { receipt -> if (receipt.status == Status.PAID) receipt.value else 0.0 }
+
 }
 
 sealed class HomeEvent {

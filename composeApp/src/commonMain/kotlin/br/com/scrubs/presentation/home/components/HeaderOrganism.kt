@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 @Composable
 fun HeaderOrganism(
     title: String,
-    onMenuClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(

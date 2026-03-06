@@ -104,6 +104,13 @@ private fun HomeContent(
             }
 
             item {
+                AmountMolecule(
+                    label = "Total já Recebido nesse período",
+                    amount = state.totalPaid
+                )
+            }
+
+            item {
                 DateFilterRow(
                     selectedFilter = state.selectedFilter,
                     onFilterSelected = { onEvent(HomeEvent.FilterChanged(it)) }
