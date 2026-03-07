@@ -207,7 +207,7 @@ private fun ConfirmationTopBar(
     TopAppBar(
         title = {
             Text(
-                text = "Editar Cirurgia",
+                text = if (isEditing) "Editar Cirurgia" else "Salvar Cirurgia",
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp,
                 color = Color(0xFF1A1A2E)
@@ -217,7 +217,7 @@ private fun ConfirmationTopBar(
             IconButton(onClick = onBack) {
                 Text(
                     text = "←",
-                    fontSize = 20.sp,
+                    fontSize = 28.sp,
                     color = Color(0xFF1A1A2E)
                 )
             }
@@ -285,9 +285,21 @@ private fun ImagePreviewCard(
                 Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
-            Text("Imagem Selecionada", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1A1A2E))
-            Text("Etiqueta capturada da cirurgia", fontSize = 12.sp, color = Color(0xFF8A8AAD))
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = "Imagem Selecionada",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1A1A2E)
+            )
+            Text(
+                text = "Etiqueta capturada da cirurgia",
+                fontSize = 12.sp,
+                color = Color(0xFF8A8AAD)
+            )
             Spacer(modifier = Modifier.height(2.dp))
             OutlinedButton(
                 onClick = onRetakePhoto,
@@ -296,7 +308,11 @@ private fun ImagePreviewCard(
                 border = BorderStroke(1.dp, Color(0xFF4A4AE8)),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF4A4AE8))
             ) {
-                Text("Tirar Novamente", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    text = "Tirar Novamente",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }
