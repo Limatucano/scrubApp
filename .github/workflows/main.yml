@@ -5,6 +5,9 @@ on:
     branches:
       - homolog
 
+permissions:
+  contents: write  # necessário para criar Releases e fazer upload de artefatos
+
 jobs:
   build:
     name: Build & Upload APK
