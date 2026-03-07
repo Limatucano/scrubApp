@@ -236,5 +236,5 @@ private fun CameraBottomBar(onCapture: () -> Unit, onGallery: () -> Unit, modifi
 
 @Composable
 private fun ScanOverlay() {
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)))
+    Box(modifier = Modifier.fillMaxSize())
 }
