@@ -13,11 +13,12 @@ import kotlin.time.Clock
 class ReceiptRepositoryImpl(
     private val dao: ReceiptDao
 ): ReceiptRepository {
-
     override suspend fun save(receipt: Receipt) = dao.insert(receipt.toEntity())
     override suspend fun remove(receipt: Receipt) = dao.delete(receipt.toEntity())
     override suspend fun getDistinctHealthPlans() = dao.getDistinctHealthPlans()
     override suspend fun getDistinctProcedures() = dao.getDistinctProcedures()
+    override suspend fun getAll(): Flow<List<Receipt>> = dao.getAll().map { it.toModels() }
+
     override fun getReceipts(
         filter: DateFilter,
         customRange: Pair<Long, Long>?

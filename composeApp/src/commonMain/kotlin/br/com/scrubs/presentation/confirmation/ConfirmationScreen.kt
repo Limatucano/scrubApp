@@ -29,6 +29,7 @@ import br.com.scrubs.presentation.camera.CameraScreen
 import br.com.scrubs.presentation.confirmation.components.AutoCompleteField
 import br.com.scrubs.utils.CurrencyVisualTransformation
 import br.com.scrubs.utils.MaskVisualTransformation
+import br.com.scrubs.utils.formatCurrency
 import br.com.scrubs.utils.saveImageToGallery
 import br.com.scrubs.utils.shareImage
 import cafe.adriel.voyager.core.screen.Screen
@@ -168,6 +169,8 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
                         label = "Valor da Cirurgia",
                         value = state.value,
                         error = state.errors[FormField.VALUE],
+                        suggestedValue = state.suggestedValue,
+                        onApplySuggestion = { screenModel.onEvent(ConfirmationEvent.ApplySuggestedValue) },
                         focusRequester = focusValue,
                         onValueChange = { screenModel.onEvent(ConfirmationEvent.ValueChanged(it)) }
                     )
@@ -379,8 +382,14 @@ private fun FormDateField(
 
 @Composable
 private fun FormCurrencyField(
-    label: String, value: String, error: String?,
-    focusRequester: FocusRequester, onValueChange: (String) -> Unit, modifier: Modifier = Modifier
+    label: String,
+    value: String,
+    error: String?,
+    focusRequester: FocusRequester,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    suggestedValue: Double? = null,
+    onApplySuggestion: () -> Unit = {}
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, fontSize = 12.sp, color = Color(0xFF5A5A8A), fontWeight = FontWeight.Medium)
@@ -393,6 +402,42 @@ private fun FormCurrencyField(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
             shape = RoundedCornerShape(8.dp), colors = fieldColors(textColor = Color(0xFF4A4AE8))
         )
+
+        AnimatedVisibility(
+            visible = suggestedValue != null,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            suggestedValue?.let { avg ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF4A4AE8).copy(alpha = 0.08f))
+                        .clickable { onApplySuggestion() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "💡",
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        text = "Valor médio sugerido: ${avg.formatCurrency()}",
+                        fontSize = 12.sp,
+                        color = Color(0xFF4A4AE8),
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "• Aplicar",
+                        fontSize = 12.sp,
+                        color = Color(0xFF4A4AE8),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+
         FieldError(error)
     }
 }

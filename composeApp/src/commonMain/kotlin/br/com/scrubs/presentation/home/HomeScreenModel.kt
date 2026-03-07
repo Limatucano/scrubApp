@@ -60,6 +60,8 @@ class HomeScreenModel(
     fun onEvent(event: HomeEvent) {
         when (event) {
             is HomeEvent.FilterChanged -> {
+                if (event.filter == selectedFilter.value) return
+
                 if (event.filter == DateFilter.CUSTOM) {
                     _state.update { it.copy(selectedFilter = event.filter, showDatePicker = true) }
                     selectedFilter.value = event.filter

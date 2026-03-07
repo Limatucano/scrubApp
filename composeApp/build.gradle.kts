@@ -95,6 +95,27 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    signingConfigs {
+        create("release") {
+            storeFile     = file(System.getenv("SIGNING_STORE_FILE") ?: "scrubs.jks")
+            storePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: ""
+            keyAlias      = System.getenv("SIGNING_KEY_ALIAS") ?: ""
+            keyPassword   = System.getenv("SIGNING_KEY_PASSWORD") ?: ""
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
 }
 
 dependencies {

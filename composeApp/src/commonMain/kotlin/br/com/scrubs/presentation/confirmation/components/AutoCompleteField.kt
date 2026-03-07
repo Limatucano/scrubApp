@@ -148,7 +148,7 @@ private fun SuggestionItem(text: String, query: String, onClick: () -> Unit) {
  * Remove acentos e converte para minúsculas para comparação.
  * Puro Kotlin — sem java.text.Normalizer.
  */
-private fun String.normalize(): String = this
+fun String.normalize(): String = this
     .lowercase()
     .replace(Regex("[àáâãäå]"), "a")
     .replace(Regex("[èéêë]"), "e")

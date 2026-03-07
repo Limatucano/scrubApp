@@ -10,4 +10,5 @@ interface ReceiptRepository {
     suspend fun remove(receipt: Receipt)
     suspend fun getDistinctHealthPlans(): List<String>
     suspend fun getDistinctProcedures(): List<String>
+    suspend fun getAll(): Flow<List<Receipt>>
 }
