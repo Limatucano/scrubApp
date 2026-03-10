@@ -41,6 +41,8 @@ import org.jetbrains.compose.resources.painterResource
 import org.koin.core.parameter.parametersOf
 import scrubs.composeapp.generated.resources.Res
 import scrubs.composeapp.generated.resources.arrow_back
+import scrubs.composeapp.generated.resources.chart_column
+import scrubs.composeapp.generated.resources.delete
 
 data class ConfirmationScreen(val receipt: Receipt) : Screen {
 
@@ -243,10 +245,10 @@ private fun ConfirmationTopBar(
         actions = {
             if (isEditing) {
                 IconButton(onClick = onDelete) {
-                    Text(
-                        text = "Excluir",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                    Icon(
+                        painter = painterResource(Res.drawable.delete),
+                        contentDescription = null,
+                        tint = Color(0xFF4A4AE8)
                     )
                 }
             }
