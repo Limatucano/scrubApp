@@ -3,7 +3,10 @@ package br.com.scrubs.presentation.home
 import br.com.scrubs.domain.model.DateFilter
 import br.com.scrubs.domain.model.Receipt
 import br.com.scrubs.domain.model.Status
+import br.com.scrubs.domain.model.SummaryData
+import br.com.scrubs.domain.model.calculate
 import br.com.scrubs.domain.repository.ReceiptRepository
+import br.com.scrubs.presentation.confirmation.components.normalize
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,6 +18,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class HomeState(
     val receipts: List<Receipt> = emptyList(),
@@ -22,18 +26,27 @@ data class HomeState(
     val customDateRange: Pair<Long, Long>? = null,
     val customFilterLabel: String = "Personalizado",
     val showDatePicker: Boolean = false,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val companyQuery: String = "",
+    val companySuggestions: List<String> = emptyList()
 ) {
-    val totalPending: Double
-        get() = receipts.sumOf { if (it.status == Status.PENDING) it.value else 0.0 }
+    val filteredReceipts: List<Receipt>
+        get() = if (companyQuery.isBlank()) receipts
+        else receipts.filter {
+            it.company.normalize().contains(companyQuery.normalize())
+        }
 
-    val totalPaid: Double
-        get() = receipts.sumOf { if (it.status == Status.PAID) it.value else 0.0 }
+    val totalPending: SummaryData
+        get() = filteredReceipts.calculate(Status.PENDING)
+
+    val totalPaid: SummaryData
+        get() = filteredReceipts.calculate(Status.PAID)
 }
 
 sealed class HomeEvent {
     data class FilterChanged(val filter: DateFilter) : HomeEvent()
     data class CustomDateSelected(val startMillis: Long, val endMillis: Long) : HomeEvent()
+    data class CompanyQueryChanged(val query: String) : HomeEvent()
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -55,6 +68,11 @@ class HomeScreenModel(
                 _state.update { it.copy(receipts = receipts, isLoading = false) }
             }
             .launchIn(screenModelScope)
+
+        screenModelScope.launch {
+            val companies = repository.getDistinctCompanies()
+            _state.update { it.copy(companySuggestions = companies) }
+        }
     }
 
     fun onEvent(event: HomeEvent) {
@@ -93,6 +111,9 @@ class HomeScreenModel(
                     )
                 }
             }
+
+            is HomeEvent.CompanyQueryChanged ->
+                _state.update { it.copy(companyQuery = event.query) }
         }
     }
 

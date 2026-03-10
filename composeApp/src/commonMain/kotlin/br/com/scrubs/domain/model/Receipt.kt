@@ -9,7 +9,7 @@ data class Receipt(
     val surgicalDate: String,
     val status: Status,
     val paymentDate: String? = null,
-    val company: String = "",
+    val company: String,
     val image: ByteArray? = null
 ) {
     override fun equals(other: Any?): Boolean {

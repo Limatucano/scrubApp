@@ -61,7 +61,8 @@ data class CameraScreen(
                         value = 0.0,
                         surgicalDate = "",
                         status = Status.PENDING,
-                        image = bytes
+                        image = bytes,
+                        company = ""
                     )
                 navigator.replace(ConfirmationScreen(receipt))
             },
@@ -81,7 +82,8 @@ data class CameraScreen(
                         value = 0.0,
                         surgicalDate = "",
                         status = Status.PENDING,
-                        image = bytes
+                        image = bytes,
+                        company = ""
                     )
                 navigator.replace(ConfirmationScreen(receipt))
             }
