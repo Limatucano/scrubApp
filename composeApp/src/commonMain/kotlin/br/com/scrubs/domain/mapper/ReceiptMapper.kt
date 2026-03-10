@@ -30,6 +30,8 @@ fun Receipt.toEntity(): ReceiptEntity {
         value = value,
         surgicalDate = surgicalDate,
         isPaid = status == Status.PAID,
-        imageBytes = image
+        imageBytes = image,
+        paymentDate = paymentDate,
+        company = company
     )
 }

@@ -14,10 +14,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,9 +51,13 @@ class HomeScreen : Screen {
         val screenModel = koinScreenModel<HomeScreenModel>()
         val state by screenModel.state.collectAsState()
         val navigator = LocalNavigator.current
+        val datePickerState = rememberDateRangePickerState(
+            initialDisplayMode = DisplayMode.Picker
+        )
 
         if (state.showDatePicker) {
             ScrubsDateRangePicker(
+                state = datePickerState,
                 onDismiss = screenModel::dismissDatePicker,
                 onConfirm = { (startMillis, endMillis) ->
                     screenModel.onEvent(HomeEvent.CustomDateSelected(startMillis, endMillis))

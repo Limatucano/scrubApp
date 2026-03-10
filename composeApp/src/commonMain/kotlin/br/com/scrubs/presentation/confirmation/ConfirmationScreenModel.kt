@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 enum class FormField {
-    SURGICAL_DATE, PATIENT_NAME, PROCEDURE, HEALTH_PLAN, VALUE, PAYMENT_DATE
+    SURGICAL_DATE, PATIENT_NAME, PROCEDURE, HEALTH_PLAN, VALUE, PAYMENT_DATE, COMPANY
 }
 
 data class ConfirmationState(
@@ -38,6 +38,8 @@ data class ConfirmationState(
     val isLoading: Boolean = false,
     val healthPlanSuggestions: List<String> = emptyList(),
     val procedureSuggestions: List<String> = emptyList(),
+    val companySuggestions: List<String> = emptyList(),
+    val company: String = "",
     // Média de valor para a combinação healthPlan + procedure atual
     val suggestedValue: Double? = null
 ) {
@@ -51,7 +53,8 @@ data class ConfirmationState(
                 procedure == other.procedure && healthPlan == other.healthPlan &&
                 value == other.value && paymentDate == other.paymentDate &&
                 errors == other.errors && healthPlanSuggestions == other.healthPlanSuggestions &&
-                procedureSuggestions == other.procedureSuggestions && suggestedValue == other.suggestedValue
+                procedureSuggestions == other.procedureSuggestions &&
+                companySuggestions == other.companySuggestions && company == other.company && suggestedValue == other.suggestedValue
     }
 
     override fun hashCode(): Int {
@@ -75,6 +78,7 @@ sealed class ConfirmationEvent {
     data class ValueChanged(val value: String) : ConfirmationEvent()
     data class IsPaidChanged(val value: Boolean) : ConfirmationEvent()
     data class PaymentDateChanged(val value: String) : ConfirmationEvent()
+    data class CompanyChanged(val value: String) : ConfirmationEvent()
     object ApplySuggestedValue : ConfirmationEvent()
     object Save : ConfirmationEvent()
     object RetakePhoto : ConfirmationEvent()
@@ -100,14 +104,16 @@ class ConfirmationScreenModel(
     private val _focusEvent = Channel<FormField>(Channel.BUFFERED)
     val focusEvent = _focusEvent.receiveAsFlow()
 
+    // Todos os registros carregados uma vez — usados apenas para calcular média localmente
     private var allReceipts: List<Receipt> = emptyList()
 
     init {
         screenModelScope.launch {
-            val bitmap      = initialReceipt.image?.let { decodeByteArrayToImageBitmap(it) }
+            val bitmap = initialReceipt.image?.let { decodeByteArrayToImageBitmap(it) }
             val healthPlans = repository.getDistinctHealthPlans()
-            val procedures  = repository.getDistinctProcedures()
+            val procedures = repository.getDistinctProcedures()
 
+            // .first() coleta apenas a primeira emissão — não mantém a coroutine aberta
             allReceipts = repository.getAll().first()
 
             _state.update {
@@ -123,10 +129,13 @@ class ConfirmationScreenModel(
                     paymentDate = initialReceipt.paymentDate?.filter { c -> c.isDigit() } ?: "",
                     healthPlanSuggestions = healthPlans,
                     procedureSuggestions = procedures,
+                    companySuggestions = repository.getDistinctCompanies(),
+                    company = initialReceipt.company,
                     isLoading = false
                 )
             }
 
+            // Calcula sugestão inicial caso receipt já tenha healthPlan + procedure preenchidos
             updateSuggestedValue()
         }
     }
@@ -134,18 +143,38 @@ class ConfirmationScreenModel(
     fun onEvent(event: ConfirmationEvent) {
         when (event) {
             is ConfirmationEvent.SurgicalDateChanged ->
-                _state.update { it.copy(surgicalDate = event.value, errors = it.errors - FormField.SURGICAL_DATE) }
+                _state.update {
+                    it.copy(
+                        surgicalDate = event.value,
+                        errors = it.errors - FormField.SURGICAL_DATE
+                    )
+                }
 
             is ConfirmationEvent.PatientNameChanged ->
-                _state.update { it.copy(patientName = event.value, errors = it.errors - FormField.PATIENT_NAME) }
+                _state.update {
+                    it.copy(
+                        patientName = event.value,
+                        errors = it.errors - FormField.PATIENT_NAME
+                    )
+                }
 
             is ConfirmationEvent.ProcedureChanged -> {
-                _state.update { it.copy(procedure = event.value, errors = it.errors - FormField.PROCEDURE) }
+                _state.update {
+                    it.copy(
+                        procedure = event.value,
+                        errors = it.errors - FormField.PROCEDURE
+                    )
+                }
                 updateSuggestedValue()
             }
 
             is ConfirmationEvent.HealthPlanChanged -> {
-                _state.update { it.copy(healthPlan = event.value, errors = it.errors - FormField.HEALTH_PLAN) }
+                _state.update {
+                    it.copy(
+                        healthPlan = event.value,
+                        errors = it.errors - FormField.HEALTH_PLAN
+                    )
+                }
                 updateSuggestedValue()
             }
 
@@ -153,11 +182,30 @@ class ConfirmationScreenModel(
                 _state.update { it.copy(value = event.value, errors = it.errors - FormField.VALUE) }
 
             is ConfirmationEvent.IsPaidChanged ->
-                _state.update { it.copy(isPaid = event.value, paymentDate = if (!event.value) "" else it.paymentDate) }
+                _state.update {
+                    it.copy(
+                        isPaid = event.value,
+                        paymentDate = if (!event.value) "" else it.paymentDate
+                    )
+                }
+
+            is ConfirmationEvent.CompanyChanged ->
+                _state.update {
+                    it.copy(
+                        company = event.value,
+                        errors = it.errors - FormField.COMPANY
+                    )
+                }
 
             is ConfirmationEvent.PaymentDateChanged ->
-                _state.update { it.copy(paymentDate = event.value, errors = it.errors - FormField.PAYMENT_DATE) }
+                _state.update {
+                    it.copy(
+                        paymentDate = event.value,
+                        errors = it.errors - FormField.PAYMENT_DATE
+                    )
+                }
 
+            // Aplica o valor sugerido convertendo Double → centavos como String
             ConfirmationEvent.ApplySuggestedValue -> {
                 val suggested = _state.value.suggestedValue ?: return
                 val cents = (suggested * 100).toLong().toString()
@@ -168,14 +216,20 @@ class ConfirmationScreenModel(
             ConfirmationEvent.RetakePhoto -> screenModelScope.launch {
                 _navigation.emit(ConfirmationNavigation.RetakePhoto)
             }
+
             ConfirmationEvent.Delete -> delete()
         }
     }
 
+    /**
+     * Calcula a média de valor dos registros que têm o mesmo healthPlan E procedure
+     * (comparação normalizada — sem acentos, sem case).
+     * Limpa a sugestão se um dos campos estiver vazio ou sem correspondência.
+     */
     private fun updateSuggestedValue() {
         val current = _state.value
         val healthPlan = current.healthPlan.trim()
-        val procedure  = current.procedure.trim()
+        val procedure = current.procedure.trim()
 
         if (healthPlan.isBlank() || procedure.isBlank()) {
             _state.update { it.copy(suggestedValue = null) }
@@ -185,7 +239,7 @@ class ConfirmationScreenModel(
         val matching = allReceipts.filter { receipt ->
             receipt.healthPlan.normalize() == healthPlan.normalize() &&
                     receipt.surgicalProcedure.normalize() == procedure.normalize() &&
-                    receipt.id != initialReceipt.id
+                    receipt.id != initialReceipt.id  // exclui o próprio registro em caso de edição
         }
 
         val average = if (matching.isNotEmpty()) matching.sumOf { it.value } / matching.size
@@ -199,6 +253,7 @@ class ConfirmationScreenModel(
             patientName = s.patientName.trim(),
             healthPlan = s.healthPlan.trim(),
             surgicalProcedure = s.procedure.trim(),
+            company = s.company.trim(),
             value = (s.value.toLongOrNull() ?: 0L) / 100.0,
             surgicalDate = s.surgicalDate.toFormattedDate(),
             paymentDate = if (s.isPaid) s.paymentDate.toFormattedDate() else null,
@@ -212,7 +267,14 @@ class ConfirmationScreenModel(
             _state.update { it.copy(isSaving = true) }
             runCatching { repository.remove(currentReceipt()) }
                 .onSuccess { _navigation.emit(ConfirmationNavigation.GoBack) }
-                .onFailure { _state.update { s -> s.copy(isSaving = false, errors = mapOf(FormField.PATIENT_NAME to "Erro ao deletar. Tente novamente.")) } }
+                .onFailure {
+                    _state.update { s ->
+                        s.copy(
+                            isSaving = false,
+                            errors = mapOf(FormField.PATIENT_NAME to "Erro ao deletar. Tente novamente.")
+                        )
+                    }
+                }
         }
     }
 
@@ -231,7 +293,14 @@ class ConfirmationScreenModel(
             _state.update { it.copy(isSaving = true) }
             runCatching { repository.save(currentReceipt()) }
                 .onSuccess { _navigation.emit(ConfirmationNavigation.GoBack) }
-                .onFailure { _state.update { s -> s.copy(isSaving = false, errors = mapOf(FormField.PATIENT_NAME to "Erro ao salvar. Tente novamente.")) } }
+                .onFailure {
+                    _state.update { s ->
+                        s.copy(
+                            isSaving = false,
+                            errors = mapOf(FormField.PATIENT_NAME to "Erro ao salvar. Tente novamente.")
+                        )
+                    }
+                }
         }
     }
 
@@ -241,9 +310,11 @@ class ConfirmationScreenModel(
             errors[FormField.SURGICAL_DATE] = "Data da cirurgia obrigatória"
         else if (!isValidDateDigits(state.surgicalDate))
             errors[FormField.SURGICAL_DATE] = "Data inválida. Use dd/MM/aaaa"
-        if (state.patientName.isBlank()) errors[FormField.PATIENT_NAME] = "Nome do paciente obrigatório"
-        if (state.procedure.isBlank())   errors[FormField.PROCEDURE]     = "Procedimento obrigatório"
-        if (state.healthPlan.isBlank())  errors[FormField.HEALTH_PLAN]   = "Plano de saúde obrigatório"
+        if (state.patientName.isBlank()) errors[FormField.PATIENT_NAME] =
+            "Nome do paciente obrigatório"
+        if (state.procedure.isBlank()) errors[FormField.PROCEDURE] = "Procedimento obrigatório"
+        if (state.healthPlan.isBlank()) errors[FormField.HEALTH_PLAN] = "Plano de saúde obrigatório"
+        if (state.company.isBlank()) errors[FormField.COMPANY] = "Empresa obrigatório"
         if (state.value.isBlank() || state.value.toLongOrNull() == null)
             errors[FormField.VALUE] = "Valor obrigatório"
         if (state.isPaid) {
@@ -257,9 +328,9 @@ class ConfirmationScreenModel(
 
     private fun isValidDateDigits(digits: String): Boolean {
         if (digits.length != 8) return false
-        val day   = digits.substring(0, 2).toIntOrNull() ?: return false
+        val day = digits.substring(0, 2).toIntOrNull() ?: return false
         val month = digits.substring(2, 4).toIntOrNull() ?: return false
-        val year  = digits.substring(4, 8).toIntOrNull() ?: return false
+        val year = digits.substring(4, 8).toIntOrNull() ?: return false
         return day in 1..31 && month in 1..12 && year in 1900..2100
     }
 

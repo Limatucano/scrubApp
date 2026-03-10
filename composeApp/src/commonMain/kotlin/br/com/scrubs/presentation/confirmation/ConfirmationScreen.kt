@@ -57,6 +57,7 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
         val focusHealthPlan   = remember { FocusRequester() }
         val focusValue        = remember { FocusRequester() }
         val focusPaymentDate  = remember { FocusRequester() }
+        val focusCompany = remember { FocusRequester() }
 
         LaunchedEffect(Unit) {
             screenModel.navigation.collect { nav ->
@@ -78,6 +79,7 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
                     FormField.HEALTH_PLAN   -> focusHealthPlan
                     FormField.VALUE         -> focusValue
                     FormField.PAYMENT_DATE  -> focusPaymentDate
+                    FormField.COMPANY       -> focusCompany
                 }
                 requester.requestFocus()
                 scope.launch { scrollState.animateScrollTo(0) }
@@ -158,9 +160,19 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
                         suggestions = state.healthPlanSuggestions,
                         error = state.errors[FormField.HEALTH_PLAN],
                         focusRequester = focusHealthPlan,
-                        nextFocusRequester = focusValue,
+                        nextFocusRequester = focusCompany,
                         capitalization = KeyboardCapitalization.Words,
                         onValueChange = { screenModel.onEvent(ConfirmationEvent.HealthPlanChanged(it)) }
+                    )
+                    AutoCompleteField(
+                        label = "Empresa Responsável",
+                        value = state.company,
+                        suggestions = state.companySuggestions,
+                        error = state.errors[FormField.COMPANY],
+                        focusRequester = focusCompany,
+                        nextFocusRequester = focusValue,
+                        capitalization = KeyboardCapitalization.Words,
+                        onValueChange = { screenModel.onEvent(ConfirmationEvent.CompanyChanged(it)) }
                     )
                 }
 

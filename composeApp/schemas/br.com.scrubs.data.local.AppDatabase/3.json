@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "60d8298b79f167b1705ccc0b833d297f",
+    "identityHash": "d908fe433ce39e8488cda8bd15063a96",
     "entities": [
       {
         "tableName": "receipts",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `patientName` TEXT NOT NULL, `healthPlan` TEXT NOT NULL, `surgicalProcedure` TEXT NOT NULL, `value` REAL NOT NULL, `surgicalDate` TEXT NOT NULL, `isPaid` INTEGER NOT NULL, `paymentDate` TEXT, `imageBytes` BLOB)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `patientName` TEXT NOT NULL, `healthPlan` TEXT NOT NULL, `surgicalProcedure` TEXT NOT NULL, `value` REAL NOT NULL, `surgicalDate` TEXT NOT NULL, `isPaid` INTEGER NOT NULL, `paymentDate` TEXT, `company` TEXT NOT NULL, `imageBytes` BLOB)",
         "fields": [
           {
             "fieldPath": "id",
@@ -56,6 +56,12 @@
             "affinity": "TEXT"
           },
           {
+            "fieldPath": "company",
+            "columnName": "company",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
             "fieldPath": "imageBytes",
             "columnName": "imageBytes",
             "affinity": "BLOB"
@@ -71,7 +77,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '60d8298b79f167b1705ccc0b833d297f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd908fe433ce39e8488cda8bd15063a96')"
     ]
   }
 }

@@ -39,6 +39,7 @@ class ReceiptRepositoryImpl(
     override suspend fun remove(receipt: Receipt) = dao.delete(receipt.toEntity())
     override suspend fun getDistinctHealthPlans() = dao.getDistinctHealthPlans()
     override suspend fun getDistinctProcedures() = dao.getDistinctProcedures()
+    override suspend fun getDistinctCompanies() = dao.getDistinctCompanies()
 
     private fun Int.daysMillis(): Long = this * 24L * 60 * 60 * 1000
 

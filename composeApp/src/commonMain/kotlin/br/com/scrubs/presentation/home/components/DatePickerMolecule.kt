@@ -19,22 +19,13 @@ import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-/**
- * DateRangePicker dialog respeitando as cores do app.
- *
- * @param onDismiss    Chamado ao cancelar
- * @param onConfirm    Retorna Pair(startDateMillis, endDateMillis)
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScrubsDateRangePicker(
+    state: DateRangePickerState,
     onDismiss: () -> Unit,
     onConfirm: (Pair<Long, Long>) -> Unit
 ) {
-    val state = rememberDateRangePickerState(
-        initialDisplayMode = DisplayMode.Picker
-    )
-
     val canConfirm = state.selectedStartDateMillis != null && state.selectedEndDateMillis != null
 
     Dialog(
