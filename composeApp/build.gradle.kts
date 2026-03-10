@@ -70,6 +70,11 @@ kotlin {
     }
 }
 
+compose.resources {
+    publicResClass = true
+    generateResClass = always
+}
+
 android {
     namespace = "br.com.scrubs"
     compileSdk = libs.versions.android.compileSdk.get().toInt()

@@ -40,7 +40,6 @@ data class ConfirmationState(
     val procedureSuggestions: List<String> = emptyList(),
     val companySuggestions: List<String> = emptyList(),
     val company: String = "",
-    // Média de valor para a combinação healthPlan + procedure atual
     val suggestedValue: Double? = null
 ) {
     override fun equals(other: Any?): Boolean {
@@ -205,7 +204,6 @@ class ConfirmationScreenModel(
                     )
                 }
 
-            // Aplica o valor sugerido convertendo Double → centavos como String
             ConfirmationEvent.ApplySuggestedValue -> {
                 val suggested = _state.value.suggestedValue ?: return
                 val cents = (suggested * 100).toLong().toString()
@@ -221,11 +219,6 @@ class ConfirmationScreenModel(
         }
     }
 
-    /**
-     * Calcula a média de valor dos registros que têm o mesmo healthPlan E procedure
-     * (comparação normalizada — sem acentos, sem case).
-     * Limpa a sugestão se um dos campos estiver vazio ou sem correspondência.
-     */
     private fun updateSuggestedValue() {
         val current = _state.value
         val healthPlan = current.healthPlan.trim()
@@ -239,7 +232,7 @@ class ConfirmationScreenModel(
         val matching = allReceipts.filter { receipt ->
             receipt.healthPlan.normalize() == healthPlan.normalize() &&
                     receipt.surgicalProcedure.normalize() == procedure.normalize() &&
-                    receipt.id != initialReceipt.id  // exclui o próprio registro em caso de edição
+                    receipt.id != initialReceipt.id
         }
 
         val average = if (matching.isNotEmpty()) matching.sumOf { it.value } / matching.size

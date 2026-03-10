@@ -12,16 +12,23 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.scrubs.utils.formatCurrency
+import org.jetbrains.compose.resources.painterResource
+import scrubs.composeapp.generated.resources.Res
+import scrubs.composeapp.generated.resources.chart_column
+import scrubs.composeapp.generated.resources.dollar_sign
+import scrubs.composeapp.generated.resources.hand_coins
 
 @Composable
 fun AmountSummaryRow(
@@ -38,7 +45,7 @@ fun AmountSummaryRow(
         AmountCard(
             modifier = Modifier.weight(1f),
             backgroundColor = Color(0xFF2ECC71),
-            icon = "✓",
+            icon = painterResource(Res.drawable.hand_coins),
             iconBackground = Color(0xFF27AE60),
             label = "Recebido",
             count = countPaid,
@@ -47,7 +54,7 @@ fun AmountSummaryRow(
         AmountCard(
             modifier = Modifier.weight(1f),
             backgroundColor = Color(0xFFFF8C00),
-            icon = "↗",
+            icon = painterResource(Res.drawable.dollar_sign),
             iconBackground = Color(0xFFE07B00),
             label = "A Receber",
             count = countPending,
@@ -60,7 +67,7 @@ fun AmountSummaryRow(
 private fun AmountCard(
     modifier: Modifier = Modifier,
     backgroundColor: Color,
-    icon: String,
+    icon: Painter,
     iconBackground: Color,
     label: String,
     count: Int,
@@ -80,7 +87,6 @@ private fun AmountCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Ícone com fundo levemente mais escuro
                 Card(
                     modifier = Modifier
                         .size(32.dp)
@@ -94,11 +100,10 @@ private fun AmountCard(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = icon,
-                            fontSize = 16.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
+                        Icon(
+                            painter = icon,
+                            contentDescription = null,
+                            tint = Color(0xFFFFFFFF)
                         )
                     }
                 }

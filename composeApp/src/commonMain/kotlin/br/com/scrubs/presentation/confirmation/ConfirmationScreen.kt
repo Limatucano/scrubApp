@@ -37,7 +37,10 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.painterResource
 import org.koin.core.parameter.parametersOf
+import scrubs.composeapp.generated.resources.Res
+import scrubs.composeapp.generated.resources.arrow_back
 
 data class ConfirmationScreen(val receipt: Receipt) : Screen {
 
@@ -230,10 +233,10 @@ private fun ConfirmationTopBar(
         },
         navigationIcon = {
             IconButton(onClick = onBack) {
-                Text(
-                    text = "←",
-                    fontSize = 28.sp,
-                    color = Color(0xFF1A1A2E)
+                Icon(
+                    painter = painterResource(Res.drawable.arrow_back),
+                    contentDescription = null,
+                    tint = Color(0xFF4A4AE8)
                 )
             }
         },
@@ -428,6 +431,7 @@ private fun FormCurrencyField(
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color(0xFF4A4AE8).copy(alpha = 0.08f))
                         .clickable { onApplySuggestion() }
+                        .fillMaxWidth()
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Text(

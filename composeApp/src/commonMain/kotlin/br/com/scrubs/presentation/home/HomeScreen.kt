@@ -27,13 +27,18 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DisplayMode
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -57,15 +62,18 @@ import br.com.scrubs.domain.model.Receipt
 import br.com.scrubs.presentation.camera.CameraScreen
 import br.com.scrubs.presentation.confirmation.ConfirmationScreen
 import br.com.scrubs.presentation.confirmation.components.normalize
-import br.com.scrubs.presentation.home.components.AmountMolecule
 import br.com.scrubs.presentation.home.components.AmountSummaryRow
-import br.com.scrubs.presentation.home.components.HeaderOrganism
 import br.com.scrubs.presentation.home.components.ReceiptItemMolecule
 import br.com.scrubs.presentation.home.components.ScrubsDateRangePicker
+import br.com.scrubs.presentation.home.components.TitleAtom
+import br.com.scrubs.presentation.report.ReportScreen
 import br.com.scrubs.utils.parseToDayMonth
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import org.jetbrains.compose.resources.painterResource
+import scrubs.composeapp.generated.resources.Res
+import scrubs.composeapp.generated.resources.chart_column
 
 class HomeScreen : Screen {
     @Composable
@@ -91,7 +99,8 @@ class HomeScreen : Screen {
             state = state,
             onEvent = screenModel::onEvent,
             onAddClick = { navigator?.push(CameraScreen()) },
-            onEditClick = { navigator?.push(ConfirmationScreen(it)) }
+            onEditClick = { navigator?.push(ConfirmationScreen(it)) },
+            onReportClick = { navigator?.push(ReportScreen()) }
         )
     }
 }
@@ -101,11 +110,17 @@ private fun HomeContent(
     state: HomeState,
     onAddClick: () -> Unit,
     onEvent: (HomeEvent) -> Unit,
-    onEditClick: (Receipt) -> Unit
+    onEditClick: (Receipt) -> Unit,
+    onReportClick: () -> Unit
 ) {
     val backgroundColor = Color(0xFFF4F4FB)
 
     Scaffold(
+        topBar = {
+            HomeTopBar(
+                onReportClick = onReportClick
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { onAddClick() },
@@ -131,9 +146,6 @@ private fun HomeContent(
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                HeaderOrganism(title = "Olá, Daniella Corrêa :)")
-            }
 
             item {
                 AmountSummaryRow(
@@ -191,6 +203,28 @@ private fun HomeContent(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeTopBar(onReportClick: () -> Unit = {}) {
+    TopAppBar(
+        title = {
+            TitleAtom(text = "Olá, Daniella Corrêa")
+        },
+        actions = {
+            IconButton(onClick = onReportClick) {
+                Icon(
+                    painter = painterResource(Res.drawable.chart_column),
+                    contentDescription = null,
+                    tint = Color(0xFF4A4AE8)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.White
+        )
+    )
 }
 
 @Composable
