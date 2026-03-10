@@ -53,6 +53,7 @@ fun ReceiptItemMolecule(
             .clip(RoundedCornerShape(16.dp))
             .background(CardBackground)
             .padding(16.dp)
+            .clickable { onEditClick() }
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -131,24 +132,6 @@ fun ReceiptItemMolecule(
                     fontWeight = FontWeight.SemiBold,
                     color = AmountColor
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.clickable { onEditClick() }
-                ) {
-//                        Icon(
-//                            imageVector = Icon,
-//                            contentDescription = "Editar",
-//                            tint = EditColor,
-//                            modifier = Modifier.size(14.dp)
-//                        )
-                    Text(
-                        text = "Editar",
-                        fontSize = 13.sp,
-                        color = EditColor,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
             }
         }
     }

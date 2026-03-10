@@ -1,7 +1,7 @@
 package br.com.scrubs.domain.model
 
 enum class DateFilter(val label: String) {
-    DAYS_15("15 Dias"),
+    ALL("Todas"),
     DAYS_30("30 Dias"),
     CUSTOM("Personalizado");
 
@@ -11,7 +11,7 @@ enum class DateFilter(val label: String) {
 
         fun Long.toFormattedDate(): String {
             val (day, month, year) = toDateParts()
-            return "${day.padStart(2,'0')}/${month.padStart(2,'0')}/$year"
+            return "${day.padStart(2, '0')}/${month.padStart(2, '0')}/$year"
         }
 
         private fun Long.toDateParts(): Triple<String, String, String> {
