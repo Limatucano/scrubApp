@@ -12,5 +12,8 @@
 
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>Usado para salvar etiquetas cirúrgicas na galeria.</string>
+
+    <key>NSFaceIDUsageDescription</key>
+    <string>Usado para autenticar no Control Cirúrgico</string>
 </dict>
 </plist>

@@ -12,31 +12,34 @@ import kotlin.time.Clock
 
 class ReceiptRepositoryImpl(
     private val dao: ReceiptDao
-): ReceiptRepository {
-    override suspend fun save(receipt: Receipt) = dao.insert(receipt.toEntity())
-    override suspend fun remove(receipt: Receipt) = dao.delete(receipt.toEntity())
-    override suspend fun getDistinctHealthPlans() = dao.getDistinctHealthPlans()
-    override suspend fun getDistinctProcedures() = dao.getDistinctProcedures()
-    override suspend fun getAll(): Flow<List<Receipt>> = dao.getAll().map { it.toModels() }
+) : ReceiptRepository {
 
-    override fun getReceipts(
+    override suspend fun getReceipts(
         filter: DateFilter,
         customRange: Pair<Long, Long>?
     ): Flow<List<Receipt>> {
+        if (filter == DateFilter.ALL) return getAll()
+
         val today = Clock.System.now().toEpochMilliseconds()
         val todayIso = today.toIsoDate()
 
         val (start, end) = when (filter) {
-            DateFilter.DAYS_15 -> (today - 15.daysMillis()).toIsoDate() to todayIso
             DateFilter.DAYS_30 -> (today - 30.daysMillis()).toIsoDate() to todayIso
             DateFilter.CUSTOM  -> {
-                val (s, e) = customRange ?: ((today - 15.daysMillis()) to today)
+                val (s, e) = customRange ?: ((today - 30.daysMillis()) to today)
                 s.toIsoDate() to e.toIsoDate()
             }
         }
 
         return dao.getByDateRange(start, end).map { it.toModels() }
     }
+
+    override suspend fun getAll(): Flow<List<Receipt>> = dao.getAll().map { it.toModels() }
+    override suspend fun save(receipt: Receipt) = dao.insert(receipt.toEntity())
+    override suspend fun remove(receipt: Receipt) = dao.delete(receipt.toEntity())
+    override suspend fun getDistinctHealthPlans() = dao.getDistinctHealthPlans()
+    override suspend fun getDistinctProcedures() = dao.getDistinctProcedures()
+    override suspend fun getDistinctCompanies() = dao.getDistinctCompanies()
 
     private fun Int.daysMillis(): Long = this * 24L * 60 * 60 * 1000
 
@@ -51,13 +54,8 @@ class ReceiptRepositoryImpl(
         }
         val ml = intArrayOf(31, if (isLeap(year)) 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
         var month = 1
-        for (len in ml) {
-            if (days < len) break
-            days -= len
-            month++
-        }
-        val day = (days + 1).toString().padStart(2, '0')
-        return "$year-${month.toString().padStart(2, '0')}-$day"
+        for (len in ml) { if (days < len) break; days -= len; month++ }
+        return "$year-${month.toString().padStart(2, '0')}-${(days + 1).toString().padStart(2, '0')}"
     }
 
     private fun isLeap(y: Int) = (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0)

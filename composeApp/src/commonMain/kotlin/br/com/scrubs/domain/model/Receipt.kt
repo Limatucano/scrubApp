@@ -9,6 +9,7 @@ data class Receipt(
     val surgicalDate: String,
     val status: Status,
     val paymentDate: String? = null,
+    val company: String,
     val image: ByteArray? = null
 ) {
     override fun equals(other: Any?): Boolean {
@@ -25,6 +26,7 @@ data class Receipt(
         if (surgicalDate != other.surgicalDate) return false
         if (status != other.status) return false
         if (paymentDate != other.paymentDate) return false
+        if (company != other.company) return false
         if (!image.contentEquals(other.image)) return false
 
         return true
@@ -39,6 +41,7 @@ data class Receipt(
         result = 31 * result + surgicalDate.hashCode()
         result = 31 * result + status.hashCode()
         result = 31 * result + (paymentDate?.hashCode() ?: 0)
+        result = 31 * result + company.hashCode()
         result = 31 * result + (image?.contentHashCode() ?: 0)
         return result
     }

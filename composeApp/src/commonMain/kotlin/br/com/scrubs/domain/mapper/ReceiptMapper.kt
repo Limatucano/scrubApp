@@ -13,7 +13,9 @@ fun ReceiptEntity.toModel(): Receipt {
         value = value,
         surgicalDate = surgicalDate,
         status = if (isPaid) Status.PAID else Status.PENDING,
-        image = imageBytes
+        image = imageBytes,
+        paymentDate = paymentDate,
+        company = company
     )
 }
 
@@ -30,6 +32,8 @@ fun Receipt.toEntity(): ReceiptEntity {
         value = value,
         surgicalDate = surgicalDate,
         isPaid = status == Status.PAID,
-        imageBytes = image
+        imageBytes = image,
+        paymentDate = paymentDate,
+        company = company
     )
 }

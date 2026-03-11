@@ -7,6 +7,7 @@ import br.com.scrubs.presentation.home.HomeScreenModel
 import br.com.scrubs.presentation.permission.PermissionFactory
 import br.com.scrubs.presentation.permission.PermissionManager
 import br.com.scrubs.presentation.permission.PermissionManagerImpl
+import br.com.scrubs.presentation.report.ReportScreenModel
 import org.koin.dsl.module
 val presentationModule = module {
     single<PermissionManager> {
@@ -34,4 +35,6 @@ val presentationModule = module {
             repository = get()
         )
     }
+
+    factory { ReportScreenModel(repository = get()) }
 }

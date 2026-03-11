@@ -24,6 +24,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.Image
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.graphics.painter.Painter
+import org.jetbrains.compose.resources.painterResource
+import scrubs.composeapp.generated.resources.Res
+import scrubs.composeapp.generated.resources.chart_column
+import scrubs.composeapp.generated.resources.close
+import scrubs.composeapp.generated.resources.download
+import scrubs.composeapp.generated.resources.share_2
 
 @Composable
 fun FullScreenImagePreview(
@@ -72,10 +81,10 @@ fun FullScreenImagePreview(
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PreviewIconButton(label = "Compartilhar", onClick = onShare)
-                    PreviewIconButton(label = "Baixar", onClick = onDownload)
+                    PreviewIconButton(icon = painterResource(Res.drawable.share_2), onClick = onShare)
+                    PreviewIconButton(icon = painterResource(Res.drawable.download), onClick = onDownload)
                 }
-                PreviewIconButton(label = "✕", onClick = onDismiss)
+                PreviewIconButton(icon = painterResource(Res.drawable.close), onClick = onDismiss)
             }
 
             Box(
@@ -132,15 +141,12 @@ fun FullScreenImagePreview(
 }
 
 @Composable
-private fun PreviewIconButton(label: String, onClick: () -> Unit) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.15f))
-            .clickable { onClick() }
-    ) {
-        Text(text = label, fontSize = 16.sp, color = Color.White)
+private fun PreviewIconButton(icon: Painter, onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(
+            painter = icon,
+            contentDescription = null,
+            tint = Color(0xFFFFFFFF)
+        )
     }
 }

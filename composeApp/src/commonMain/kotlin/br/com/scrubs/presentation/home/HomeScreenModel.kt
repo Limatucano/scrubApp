@@ -3,7 +3,10 @@ package br.com.scrubs.presentation.home
 import br.com.scrubs.domain.model.DateFilter
 import br.com.scrubs.domain.model.Receipt
 import br.com.scrubs.domain.model.Status
+import br.com.scrubs.domain.model.SummaryData
+import br.com.scrubs.domain.model.calculate
 import br.com.scrubs.domain.repository.ReceiptRepository
+import br.com.scrubs.presentation.confirmation.components.normalize
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,23 +22,31 @@ import kotlinx.coroutines.launch
 
 data class HomeState(
     val receipts: List<Receipt> = emptyList(),
-    val selectedFilter: DateFilter = DateFilter.DAYS_30,
+    val selectedFilter: DateFilter = DateFilter.ALL,
     val customDateRange: Pair<Long, Long>? = null,
     val customFilterLabel: String = "Personalizado",
     val showDatePicker: Boolean = false,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = true,
+    val companyQuery: String = "",
+    val companySuggestions: List<String> = emptyList()
 ) {
-    val totalPending: Double
-        get() = receipts.sumOf { receipt -> if (receipt.status == Status.PENDING) receipt.value else 0.0 }
+    val filteredReceipts: List<Receipt>
+        get() = if (companyQuery.isBlank()) receipts
+        else receipts.filter {
+            it.company.normalize().contains(companyQuery.normalize())
+        }
 
-    val totalPaid: Double
-        get() = receipts.sumOf { receipt -> if (receipt.status == Status.PAID) receipt.value else 0.0 }
+    val totalPending: SummaryData
+        get() = filteredReceipts.calculate(Status.PENDING)
 
+    val totalPaid: SummaryData
+        get() = filteredReceipts.calculate(Status.PAID)
 }
 
 sealed class HomeEvent {
     data class FilterChanged(val filter: DateFilter) : HomeEvent()
     data class CustomDateSelected(val startMillis: Long, val endMillis: Long) : HomeEvent()
+    data class CompanyQueryChanged(val query: String) : HomeEvent()
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -44,8 +55,10 @@ class HomeScreenModel(
 ) : ScreenModel {
     private val _state = MutableStateFlow(HomeState())
     val state: StateFlow<HomeState> = _state.asStateFlow()
-    private val selectedFilter = MutableStateFlow(DateFilter.DAYS_30)
+
+    private val selectedFilter = MutableStateFlow(DateFilter.ALL)
     private val customDateRange = MutableStateFlow<Pair<Long, Long>?>(null)
+
     init {
         combine(selectedFilter, customDateRange) { filter, range -> filter to range }
             .flatMapLatest { (filter, range) ->
@@ -55,6 +68,11 @@ class HomeScreenModel(
                 _state.update { it.copy(receipts = receipts, isLoading = false) }
             }
             .launchIn(screenModelScope)
+
+        screenModelScope.launch {
+            val companies = repository.getDistinctCompanies()
+            _state.update { it.copy(companySuggestions = companies) }
+        }
     }
 
     fun onEvent(event: HomeEvent) {
@@ -64,7 +82,6 @@ class HomeScreenModel(
 
                 if (event.filter == DateFilter.CUSTOM) {
                     _state.update { it.copy(selectedFilter = event.filter, showDatePicker = true) }
-                    selectedFilter.value = event.filter
                 } else {
                     customDateRange.value = null
                     selectedFilter.value = event.filter
@@ -84,6 +101,7 @@ class HomeScreenModel(
                 val range = Pair(event.startMillis, event.endMillis)
                 val label = DateFilter.customLabel(event.startMillis, event.endMillis)
                 customDateRange.value = range
+                selectedFilter.value = DateFilter.CUSTOM
                 _state.update {
                     it.copy(
                         showDatePicker = false,
@@ -93,19 +111,17 @@ class HomeScreenModel(
                     )
                 }
             }
+
+            is HomeEvent.CompanyQueryChanged ->
+                _state.update { it.copy(companyQuery = event.query) }
         }
     }
 
     fun dismissDatePicker() {
         val hasRange = customDateRange.value != null
         if (!hasRange) {
-            selectedFilter.value = DateFilter.DAYS_30
-            _state.update {
-                it.copy(
-                    showDatePicker = false,
-                    selectedFilter = DateFilter.DAYS_30
-                )
-            }
+            selectedFilter.value = DateFilter.ALL
+            _state.update { it.copy(showDatePicker = false, selectedFilter = DateFilter.ALL) }
         } else {
             _state.update { it.copy(showDatePicker = false) }
         }

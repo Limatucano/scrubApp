@@ -30,4 +30,7 @@ interface ReceiptDao {
 
     @Query("SELECT DISTINCT surgicalProcedure FROM receipts WHERE surgicalProcedure != '' ORDER BY surgicalProcedure ASC")
     suspend fun getDistinctProcedures(): List<String>
+
+    @Query("SELECT DISTINCT company FROM receipts WHERE company != '' ORDER BY company ASC")
+    suspend fun getDistinctCompanies(): List<String>
 }

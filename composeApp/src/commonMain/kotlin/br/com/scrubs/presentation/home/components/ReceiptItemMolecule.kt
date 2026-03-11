@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.scrubs.domain.model.Status
@@ -40,6 +42,7 @@ fun ReceiptItemMolecule(
     year: String,
     patientName: String,
     healthPlan: String,
+    company: String,
     surgicalProcedure: String,
     value: Double,
     status: Status,
@@ -53,12 +56,13 @@ fun ReceiptItemMolecule(
             .clip(RoundedCornerShape(16.dp))
             .background(CardBackground)
             .padding(16.dp)
+            .clickable { onEditClick() }
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .size(width = 52.dp, height = 60.dp)
+                .size(width = 52.dp, height = 75.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(DateBoxBackground)
                 .padding(6.dp)
@@ -108,13 +112,26 @@ fun ReceiptItemMolecule(
                 text = surgicalProcedure,
                 fontSize = 13.sp,
                 color = ProcedureColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.Normal
             )
 
             Text(
                 text = healthPlan,
                 fontSize = 13.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 color = ProcedureColor,
+                fontWeight = FontWeight.Normal
+            )
+
+            Text(
+                text = company,
+                fontSize = 13.sp,
+                color = ProcedureColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.Normal
             )
 
@@ -131,24 +148,6 @@ fun ReceiptItemMolecule(
                     fontWeight = FontWeight.SemiBold,
                     color = AmountColor
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.clickable { onEditClick() }
-                ) {
-//                        Icon(
-//                            imageVector = Icon,
-//                            contentDescription = "Editar",
-//                            tint = EditColor,
-//                            modifier = Modifier.size(14.dp)
-//                        )
-                    Text(
-                        text = "Editar",
-                        fontSize = 13.sp,
-                        color = EditColor,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
             }
         }
     }

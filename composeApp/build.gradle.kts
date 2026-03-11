@@ -36,6 +36,7 @@ kotlin {
             implementation(libs.androidx.camera.core)
             implementation(libs.androidx.camera.lifecycle)
             implementation(libs.androidx.camera.view)
+            implementation(libs.androidx.biometric)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -68,6 +69,11 @@ kotlin {
             implementation(libs.kotlin.test)
         }
     }
+}
+
+compose.resources {
+    publicResClass = true
+    generateResClass = always
 }
 
 android {

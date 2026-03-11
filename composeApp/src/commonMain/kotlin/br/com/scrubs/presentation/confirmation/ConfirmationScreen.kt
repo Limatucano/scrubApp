@@ -37,7 +37,12 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.painterResource
 import org.koin.core.parameter.parametersOf
+import scrubs.composeapp.generated.resources.Res
+import scrubs.composeapp.generated.resources.arrow_back
+import scrubs.composeapp.generated.resources.chart_column
+import scrubs.composeapp.generated.resources.delete
 
 data class ConfirmationScreen(val receipt: Receipt) : Screen {
 
@@ -57,6 +62,7 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
         val focusHealthPlan   = remember { FocusRequester() }
         val focusValue        = remember { FocusRequester() }
         val focusPaymentDate  = remember { FocusRequester() }
+        val focusCompany = remember { FocusRequester() }
 
         LaunchedEffect(Unit) {
             screenModel.navigation.collect { nav ->
@@ -78,6 +84,7 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
                     FormField.HEALTH_PLAN   -> focusHealthPlan
                     FormField.VALUE         -> focusValue
                     FormField.PAYMENT_DATE  -> focusPaymentDate
+                    FormField.COMPANY       -> focusCompany
                 }
                 requester.requestFocus()
                 scope.launch { scrollState.animateScrollTo(0) }
@@ -158,9 +165,19 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
                         suggestions = state.healthPlanSuggestions,
                         error = state.errors[FormField.HEALTH_PLAN],
                         focusRequester = focusHealthPlan,
-                        nextFocusRequester = focusValue,
+                        nextFocusRequester = focusCompany,
                         capitalization = KeyboardCapitalization.Words,
                         onValueChange = { screenModel.onEvent(ConfirmationEvent.HealthPlanChanged(it)) }
+                    )
+                    AutoCompleteField(
+                        label = "Empresa Responsável",
+                        value = state.company,
+                        suggestions = state.companySuggestions,
+                        error = state.errors[FormField.COMPANY],
+                        focusRequester = focusCompany,
+                        nextFocusRequester = focusValue,
+                        capitalization = KeyboardCapitalization.Words,
+                        onValueChange = { screenModel.onEvent(ConfirmationEvent.CompanyChanged(it)) }
                     )
                 }
 
@@ -218,20 +235,20 @@ private fun ConfirmationTopBar(
         },
         navigationIcon = {
             IconButton(onClick = onBack) {
-                Text(
-                    text = "←",
-                    fontSize = 28.sp,
-                    color = Color(0xFF1A1A2E)
+                Icon(
+                    painter = painterResource(Res.drawable.arrow_back),
+                    contentDescription = null,
+                    tint = Color(0xFF4A4AE8)
                 )
             }
         },
         actions = {
             if (isEditing) {
                 IconButton(onClick = onDelete) {
-                    Text(
-                        text = "Excluir",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                    Icon(
+                        painter = painterResource(Res.drawable.delete),
+                        contentDescription = null,
+                        tint = Color(0xFF4A4AE8)
                     )
                 }
             }
@@ -416,6 +433,7 @@ private fun FormCurrencyField(
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color(0xFF4A4AE8).copy(alpha = 0.08f))
                         .clickable { onApplySuggestion() }
+                        .fillMaxWidth()
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Text(
