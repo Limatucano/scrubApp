@@ -27,13 +27,14 @@ data class HomeState(
     val customFilterLabel: String = "Personalizado",
     val showDatePicker: Boolean = false,
     val isLoading: Boolean = true,
-    val companyQuery: String = "",
+    val query: String = "",
     val companySuggestions: List<String> = emptyList()
 ) {
     val filteredReceipts: List<Receipt>
-        get() = if (companyQuery.isBlank()) receipts
+        get() = if (query.isBlank()) receipts
         else receipts.filter {
-            it.company.normalize().contains(companyQuery.normalize())
+            it.company.normalize().contains(query.normalize()) ||
+            it.patientName.normalize().contains(query.normalize())
         }
 
     val totalPending: SummaryData
@@ -113,7 +114,7 @@ class HomeScreenModel(
             }
 
             is HomeEvent.CompanyQueryChanged ->
-                _state.update { it.copy(companyQuery = event.query) }
+                _state.update { it.copy(query = event.query) }
         }
     }
 

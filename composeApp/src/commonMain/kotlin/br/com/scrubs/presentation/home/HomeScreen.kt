@@ -165,8 +165,8 @@ private fun HomeContent(
             }
 
             item {
-                CompanySearchField(
-                    query = state.companyQuery,
+                SearchField(
+                    query = state.query,
                     suggestions = state.companySuggestions,
                     onQueryChange = { onEvent(HomeEvent.CompanyQueryChanged(it)) }
                 )
@@ -228,7 +228,7 @@ private fun HomeTopBar(onReportClick: () -> Unit = {}) {
 }
 
 @Composable
-private fun CompanySearchField(
+private fun SearchField(
     query: String,
     suggestions: List<String>,
     onQueryChange: (String) -> Unit
@@ -248,7 +248,7 @@ private fun CompanySearchField(
             onValueChange = onQueryChange,
             placeholder = {
                 Text(
-                    text = "Pesquisar por empresa associada",
+                    text = "Pesquise por empresas associadas ou nome do paciente",
                     color = Color(0xFFAAAAAA),
                     fontSize = 14.sp
                 )
