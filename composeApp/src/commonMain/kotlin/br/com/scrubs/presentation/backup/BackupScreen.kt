@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.scrubs.presentation.permission.AppPermission
 import br.com.scrubs.presentation.permission.PermissionDeniedDialog
+import br.com.scrubs.presentation.permission.requiresStoragePermission
 import br.com.scrubs.utils.backup.FilePicker
 import br.com.scrubs.utils.backup.shareBackupFile
 import cafe.adriel.voyager.core.screen.Screen
@@ -78,15 +79,16 @@ class BackupScreen : Screen {
         var pendingImportBytes by remember { mutableStateOf<ByteArray?>(null) }
 
         LaunchedEffect(Unit) {
-            screenModel.requestPermission(
-                permissions = listOf(
-                    AppPermission.WRITE_STORAGE,
-                    AppPermission.STORAGE
+            if (requiresStoragePermission()) {
+                screenModel.requestPermission(
+                    permissions = listOf(
+                        AppPermission.WRITE_STORAGE,
+                        AppPermission.STORAGE
+                    )
                 )
-            )
+            }
         }
 
-        // Dialog de senha da importação
         if (showImportPasswordDialog && pendingImportBytes != null) {
             ImportPasswordDialog(
                 onDismiss = {
@@ -110,7 +112,6 @@ class BackupScreen : Screen {
             )
         }
 
-        // Dialog de erro
         if (state.error != null) {
             AlertDialog(
                 onDismissRequest = { screenModel.onEvent(BackupEvent.DismissError) },
@@ -127,7 +128,6 @@ class BackupScreen : Screen {
             )
         }
 
-        // Dialog de importação concluída
         if (state.importSuccess) {
             AlertDialog(
                 onDismissRequest = { screenModel.onEvent(BackupEvent.DismissImportSuccess) },

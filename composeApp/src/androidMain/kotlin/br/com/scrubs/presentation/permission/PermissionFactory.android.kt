@@ -1,6 +1,7 @@
 package br.com.scrubs.presentation.permission
 
 import android.content.Context
+import android.os.Build
 import dev.icerock.moko.permissions.PermissionsController
 import dev.icerock.moko.permissions.compose.PermissionsControllerFactory
 import org.koin.core.component.KoinComponent
@@ -14,4 +15,8 @@ internal actual class PermissionFactory : KoinComponent {
             PermissionsController(context)
         }
     }
+}
+
+actual fun requiresStoragePermission(): Boolean {
+    return Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
 }
