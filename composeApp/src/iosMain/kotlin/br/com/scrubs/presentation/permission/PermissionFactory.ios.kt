@@ -11,3 +11,7 @@ internal actual class PermissionFactory actual constructor() {
         }
     }
 }
+
+actual fun requiresStoragePermission(): Boolean {
+    return false
+}

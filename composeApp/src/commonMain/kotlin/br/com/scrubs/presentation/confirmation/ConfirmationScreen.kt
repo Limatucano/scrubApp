@@ -1,15 +1,57 @@
 package br.com.scrubs.presentation.confirmation
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,12 +78,22 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.attafitamim.krop.core.crop.AspectRatio
+import com.attafitamim.krop.core.crop.CircleCropShape
+import com.attafitamim.krop.core.crop.CropError
+import com.attafitamim.krop.core.crop.CropResult
+import com.attafitamim.krop.core.crop.RectCropShape
+import com.attafitamim.krop.core.crop.StarCropShape
+import com.attafitamim.krop.core.crop.TriangleCropShape
+import com.attafitamim.krop.core.crop.crop
+import com.attafitamim.krop.core.crop.cropperStyle
+import com.attafitamim.krop.core.crop.rememberImageCropper
+import com.attafitamim.krop.ui.ImageCropperDialog
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.koin.core.parameter.parametersOf
 import scrubs.composeapp.generated.resources.Res
 import scrubs.composeapp.generated.resources.arrow_back
-import scrubs.composeapp.generated.resources.chart_column
 import scrubs.composeapp.generated.resources.delete
 
 data class ConfirmationScreen(val receipt: Receipt) : Screen {
@@ -54,14 +106,15 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
         val scrollState = rememberScrollState()
         val scope = rememberCoroutineScope()
         var showImagePreview by remember { mutableStateOf(false) }
-
+        val imageCropper = rememberImageCropper()
+        val cropState = imageCropper.cropState
 
         val focusSurgicalDate = remember { FocusRequester() }
-        val focusPatientName  = remember { FocusRequester() }
-        val focusProcedure    = remember { FocusRequester() }
-        val focusHealthPlan   = remember { FocusRequester() }
-        val focusValue        = remember { FocusRequester() }
-        val focusPaymentDate  = remember { FocusRequester() }
+        val focusPatientName = remember { FocusRequester() }
+        val focusProcedure = remember { FocusRequester() }
+        val focusHealthPlan = remember { FocusRequester() }
+        val focusValue = remember { FocusRequester() }
+        val focusPaymentDate = remember { FocusRequester() }
         val focusCompany = remember { FocusRequester() }
 
         LaunchedEffect(Unit) {
@@ -79,12 +132,12 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
             screenModel.focusEvent.collect { field ->
                 val requester = when (field) {
                     FormField.SURGICAL_DATE -> focusSurgicalDate
-                    FormField.PATIENT_NAME  -> focusPatientName
-                    FormField.PROCEDURE     -> focusProcedure
-                    FormField.HEALTH_PLAN   -> focusHealthPlan
-                    FormField.VALUE         -> focusValue
-                    FormField.PAYMENT_DATE  -> focusPaymentDate
-                    FormField.COMPANY       -> focusCompany
+                    FormField.PATIENT_NAME -> focusPatientName
+                    FormField.PROCEDURE -> focusProcedure
+                    FormField.HEALTH_PLAN -> focusHealthPlan
+                    FormField.VALUE -> focusValue
+                    FormField.PAYMENT_DATE -> focusPaymentDate
+                    FormField.COMPANY -> focusCompany
                 }
                 requester.requestFocus()
                 scope.launch { scrollState.animateScrollTo(0) }
@@ -96,7 +149,28 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
                 bitmap = bitmap,
                 onDismiss = { showImagePreview = false },
                 onShare = { state.imageBytes?.let { shareImage(it, "etiqueta_cirurgica.jpg") } },
-                onDownload = { state.imageBytes?.let { saveImageToGallery(it) } }
+                onDownload = { state.imageBytes?.let { saveImageToGallery(it) } },
+                onCropImage = {
+                    scope.launch {
+                        when(val result = imageCropper.crop(bitmap)) {
+                            CropResult.Cancelled -> {}
+                            is CropError -> {}
+                            is CropResult.Success -> {
+                                screenModel.onEvent(ConfirmationEvent.ImageChanged(result.bitmap))
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
+        if (cropState != null) {
+            ImageCropperDialog(
+                state = cropState,
+                style = cropperStyle(
+                    shapes = listOf(RectCropShape, CircleCropShape, TriangleCropShape, StarCropShape),
+                    aspects = listOf(AspectRatio(16, 9), AspectRatio(1, 1)),
+                )
             )
         }
 
@@ -138,7 +212,13 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
                         error = state.errors[FormField.SURGICAL_DATE],
                         focusRequester = focusSurgicalDate,
                         nextFocusRequester = focusPatientName,
-                        onValueChange = { screenModel.onEvent(ConfirmationEvent.SurgicalDateChanged(it)) }
+                        onValueChange = {
+                            screenModel.onEvent(
+                                ConfirmationEvent.SurgicalDateChanged(
+                                    it
+                                )
+                            )
+                        }
                     )
                     FormTextField(
                         label = "Nome do Paciente",
@@ -147,7 +227,13 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
                         focusRequester = focusPatientName,
                         nextFocusRequester = focusProcedure,
                         capitalization = KeyboardCapitalization.Words,
-                        onValueChange = { screenModel.onEvent(ConfirmationEvent.PatientNameChanged(it)) }
+                        onValueChange = {
+                            screenModel.onEvent(
+                                ConfirmationEvent.PatientNameChanged(
+                                    it
+                                )
+                            )
+                        }
                     )
                     AutoCompleteField(
                         label = "Procedimento",
@@ -206,7 +292,13 @@ data class ConfirmationScreen(val receipt: Receipt) : Screen {
                             error = state.errors[FormField.PAYMENT_DATE],
                             focusRequester = focusPaymentDate,
                             nextFocusRequester = null,
-                            onValueChange = { screenModel.onEvent(ConfirmationEvent.PaymentDateChanged(it)) }
+                            onValueChange = {
+                                screenModel.onEvent(
+                                    ConfirmationEvent.PaymentDateChanged(
+                                        it
+                                    )
+                                )
+                            }
                         )
                     }
                 }
@@ -262,19 +354,29 @@ private fun ConfirmationBottomBar(onCancel: () -> Unit, onSave: () -> Unit, isSa
     Surface(shadowElevation = 8.dp, color = Color.White) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).navigationBarsPadding()
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)
+                .navigationBarsPadding()
         ) {
             OutlinedButton(
-                onClick = onCancel, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp),
+                onClick = onCancel,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(10.dp),
                 border = BorderStroke(1.dp, Color(0xFFDDDDDD)),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF5A5A8A))
             ) { Text("Cancelar", fontWeight = FontWeight.Medium) }
             Button(
                 onClick = onSave, enabled = !isSaving, modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32), contentColor = Color.White)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF2E7D32),
+                    contentColor = Color.White
+                )
             ) {
-                if (isSaving) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                if (isSaving) CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
                 else Text("Salvar Cirurgia", fontWeight = FontWeight.SemiBold)
             }
         }
@@ -299,10 +401,16 @@ private fun ImagePreviewCard(
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(72.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFF0F0FA))
+            modifier = Modifier.size(72.dp).clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFF0F0FA))
         ) {
             if (bitmap != null) {
-                Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
         Column(
@@ -339,14 +447,30 @@ private fun ImagePreviewCard(
 }
 
 @Composable
-private fun FormSection(title: String, accentColor: Color, content: @Composable ColumnScope.() -> Unit) {
+private fun FormSection(
+    title: String,
+    accentColor: Color,
+    content: @Composable ColumnScope.() -> Unit
+) {
     Column(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).padding(16.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White)
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(modifier = Modifier.width(3.dp).height(18.dp).clip(RoundedCornerShape(2.dp)).background(accentColor))
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1A1A2E))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier.width(3.dp).height(18.dp).clip(RoundedCornerShape(2.dp))
+                    .background(accentColor)
+            )
+            Text(
+                title,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1A1A2E)
+            )
         }
         content()
     }
@@ -363,11 +487,19 @@ private fun FormTextField(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, fontSize = 12.sp, color = Color(0xFF5A5A8A), fontWeight = FontWeight.Medium)
         OutlinedTextField(
-            value = value, onValueChange = onValueChange, isError = error != null, singleLine = true,
+            value = value,
+            onValueChange = onValueChange,
+            isError = error != null,
+            singleLine = true,
             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, capitalization = capitalization, imeAction = if (nextFocusRequester != null) ImeAction.Next else ImeAction.Done),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = keyboardType,
+                capitalization = capitalization,
+                imeAction = if (nextFocusRequester != null) ImeAction.Next else ImeAction.Done
+            ),
             keyboardActions = KeyboardActions(onNext = { nextFocusRequester?.requestFocus() }),
-            shape = RoundedCornerShape(8.dp), colors = fieldColors()
+            shape = RoundedCornerShape(8.dp),
+            colors = fieldColors()
         )
         FieldError(error)
     }
@@ -387,9 +519,18 @@ private fun FormDateField(
             visualTransformation = MaskVisualTransformation(MaskVisualTransformation.DATE_MASK),
             isError = error != null, singleLine = true,
             placeholder = { Text("dd/MM/aaaa", color = Color(0xFFAAAAAA), fontSize = 14.sp) },
-            leadingIcon = { Text("📅", fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp)) },
+            leadingIcon = {
+                Text(
+                    "📅",
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            },
             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = if (nextFocusRequester != null) ImeAction.Next else ImeAction.Done),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = if (nextFocusRequester != null) ImeAction.Next else ImeAction.Done
+            ),
             keyboardActions = KeyboardActions(onNext = { nextFocusRequester?.requestFocus() }),
             shape = RoundedCornerShape(8.dp), colors = fieldColors()
         )
@@ -416,7 +557,10 @@ private fun FormCurrencyField(
             visualTransformation = CurrencyVisualTransformation(),
             isError = error != null, singleLine = true,
             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Next
+            ),
             shape = RoundedCornerShape(8.dp), colors = fieldColors(textColor = Color(0xFF4A4AE8))
         )
 
@@ -462,13 +606,32 @@ private fun FormCurrencyField(
 
 @Composable
 private fun PaidToggle(isPaid: Boolean, onToggle: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column {
-            Text("Foi Pago?", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF1A1A2E))
-            Text("Marque se o pagamento já foi recebido", fontSize = 12.sp, color = Color(0xFF8A8AAD))
+            Text(
+                "Foi Pago?",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF1A1A2E)
+            )
+            Text(
+                "Marque se o pagamento já foi recebido",
+                fontSize = 12.sp,
+                color = Color(0xFF8A8AAD)
+            )
         }
-        Switch(checked = isPaid, onCheckedChange = onToggle,
-            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF4A4AE8), uncheckedThumbColor = Color.White, uncheckedTrackColor = Color(0xFFDDDDDD))
+        Switch(
+            checked = isPaid, onCheckedChange = onToggle,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF4A4AE8),
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = Color(0xFFDDDDDD)
+            )
         )
     }
 }
@@ -480,7 +643,11 @@ private fun FieldError(error: String?) {
 
 @Composable
 private fun fieldColors(textColor: Color = Color(0xFF1A1A2E)) = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = Color(0xFF4A4AE8), unfocusedBorderColor = Color(0xFFE0E0E0),
-    errorBorderColor = Color(0xFFD32F2F), focusedContainerColor = Color(0xFFF8F8FF),
-    unfocusedContainerColor = Color(0xFFFAFAFA), focusedTextColor = textColor, unfocusedTextColor = textColor
+    focusedBorderColor = Color(0xFF4A4AE8),
+    unfocusedBorderColor = Color(0xFFE0E0E0),
+    errorBorderColor = Color(0xFFD32F2F),
+    focusedContainerColor = Color(0xFFF8F8FF),
+    unfocusedContainerColor = Color(0xFFFAFAFA),
+    focusedTextColor = textColor,
+    unfocusedTextColor = textColor
 )

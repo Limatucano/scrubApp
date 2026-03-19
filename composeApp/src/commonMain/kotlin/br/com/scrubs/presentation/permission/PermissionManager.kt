@@ -6,11 +6,14 @@ import dev.icerock.moko.permissions.Permission
 import dev.icerock.moko.permissions.PermissionState
 import dev.icerock.moko.permissions.PermissionsController
 import dev.icerock.moko.permissions.camera.CAMERA
-import dev.icerock.moko.permissions.gallery.GALLERY
+import dev.icerock.moko.permissions.storage.STORAGE
+import dev.icerock.moko.permissions.storage.WRITE_STORAGE
 
 enum class AppPermission {
     CAMERA,
-    GALLERY
+    GALLERY,
+    WRITE_STORAGE,
+    STORAGE
 }
 
 enum class PermissionStatus {
@@ -38,6 +41,8 @@ class PermissionManagerImpl(
     private fun AppPermission.toMoko(): Permission? = when(this) {
         AppPermission.CAMERA -> Permission.CAMERA
         AppPermission.GALLERY -> null
+        AppPermission.WRITE_STORAGE -> Permission.WRITE_STORAGE
+        AppPermission.STORAGE -> Permission.STORAGE
     }
 
     private fun PermissionState.toPermissionStatus(): PermissionStatus = when(this) {

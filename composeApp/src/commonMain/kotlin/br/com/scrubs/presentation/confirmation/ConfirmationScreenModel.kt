@@ -6,6 +6,7 @@ import br.com.scrubs.domain.model.Status
 import br.com.scrubs.domain.repository.ReceiptRepository
 import br.com.scrubs.presentation.confirmation.components.normalize
 import br.com.scrubs.utils.decodeByteArrayToImageBitmap
+import br.com.scrubs.utils.decodeImageBitmapToByteArray
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.channels.Channel
@@ -78,6 +79,7 @@ sealed class ConfirmationEvent {
     data class IsPaidChanged(val value: Boolean) : ConfirmationEvent()
     data class PaymentDateChanged(val value: String) : ConfirmationEvent()
     data class CompanyChanged(val value: String) : ConfirmationEvent()
+    data class ImageChanged(val image: ImageBitmap) : ConfirmationEvent()
     object ApplySuggestedValue : ConfirmationEvent()
     object Save : ConfirmationEvent()
     object RetakePhoto : ConfirmationEvent()
@@ -103,7 +105,6 @@ class ConfirmationScreenModel(
     private val _focusEvent = Channel<FormField>(Channel.BUFFERED)
     val focusEvent = _focusEvent.receiveAsFlow()
 
-    // Todos os registros carregados uma vez — usados apenas para calcular média localmente
     private var allReceipts: List<Receipt> = emptyList()
 
     init {
@@ -112,7 +113,6 @@ class ConfirmationScreenModel(
             val healthPlans = repository.getDistinctHealthPlans()
             val procedures = repository.getDistinctProcedures()
 
-            // .first() coleta apenas a primeira emissão — não mantém a coroutine aberta
             allReceipts = repository.getAll().first()
 
             _state.update {
@@ -134,7 +134,6 @@ class ConfirmationScreenModel(
                 )
             }
 
-            // Calcula sugestão inicial caso receipt já tenha healthPlan + procedure preenchidos
             updateSuggestedValue()
         }
     }
@@ -216,6 +215,14 @@ class ConfirmationScreenModel(
             }
 
             ConfirmationEvent.Delete -> delete()
+            is ConfirmationEvent.ImageChanged -> {
+                _state.update {
+                    it.copy(
+                        imageBytes = decodeImageBitmapToByteArray(event.image),
+                        imageBitmap = event.image
+                    )
+                }
+            }
         }
     }
 

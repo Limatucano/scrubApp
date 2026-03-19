@@ -2,6 +2,7 @@ package br.com.scrubs.domain.repository
 
 import br.com.scrubs.domain.model.DateFilter
 import br.com.scrubs.domain.model.Receipt
+import br.com.scrubs.utils.backup.BackupReceipt
 import kotlinx.coroutines.flow.Flow
 
 interface ReceiptRepository {
@@ -12,4 +13,5 @@ interface ReceiptRepository {
     suspend fun getDistinctProcedures(): List<String>
     suspend fun getDistinctCompanies(): List<String>
     suspend fun getAll(): Flow<List<Receipt>>
+    suspend fun saveAll(receipts: List<BackupReceipt>)
 }

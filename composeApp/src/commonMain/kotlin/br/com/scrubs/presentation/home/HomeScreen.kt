@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.scrubs.domain.model.DateFilter
 import br.com.scrubs.domain.model.Receipt
+import br.com.scrubs.presentation.backup.BackupScreen
 import br.com.scrubs.presentation.camera.CameraScreen
 import br.com.scrubs.presentation.confirmation.ConfirmationScreen
 import br.com.scrubs.presentation.confirmation.components.normalize
@@ -74,6 +75,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import org.jetbrains.compose.resources.painterResource
 import scrubs.composeapp.generated.resources.Res
 import scrubs.composeapp.generated.resources.chart_column
+import scrubs.composeapp.generated.resources.database_backup
 
 class HomeScreen : Screen {
     @Composable
@@ -100,7 +102,8 @@ class HomeScreen : Screen {
             onEvent = screenModel::onEvent,
             onAddClick = { navigator?.push(CameraScreen()) },
             onEditClick = { navigator?.push(ConfirmationScreen(it)) },
-            onReportClick = { navigator?.push(ReportScreen()) }
+            onReportClick = { navigator?.push(ReportScreen()) },
+            onBackupClick = { navigator?.push(BackupScreen()) }
         )
     }
 }
@@ -111,14 +114,16 @@ private fun HomeContent(
     onAddClick: () -> Unit,
     onEvent: (HomeEvent) -> Unit,
     onEditClick: (Receipt) -> Unit,
-    onReportClick: () -> Unit
+    onReportClick: () -> Unit,
+    onBackupClick: () -> Unit
 ) {
     val backgroundColor = Color(0xFFF4F4FB)
 
     Scaffold(
         topBar = {
             HomeTopBar(
-                onReportClick = onReportClick
+                onReportClick = onReportClick,
+                onBackupClick = onBackupClick
             )
         },
         floatingActionButton = {
@@ -165,8 +170,8 @@ private fun HomeContent(
             }
 
             item {
-                CompanySearchField(
-                    query = state.companyQuery,
+                SearchField(
+                    query = state.query,
                     suggestions = state.companySuggestions,
                     onQueryChange = { onEvent(HomeEvent.CompanyQueryChanged(it)) }
                 )
@@ -207,7 +212,10 @@ private fun HomeContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HomeTopBar(onReportClick: () -> Unit = {}) {
+private fun HomeTopBar(
+    onReportClick: () -> Unit = {},
+    onBackupClick: () -> Unit = {}
+) {
     TopAppBar(
         title = {
             TitleAtom(text = "Olá, Daniella Corrêa")
@@ -220,6 +228,13 @@ private fun HomeTopBar(onReportClick: () -> Unit = {}) {
                     tint = Color(0xFF4A4AE8)
                 )
             }
+            IconButton(onClick = onBackupClick) {
+                Icon(
+                    painter = painterResource(Res.drawable.database_backup),
+                    contentDescription = null,
+                    tint = Color(0xFF4A4AE8)
+                )
+            }
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.White
@@ -228,7 +243,7 @@ private fun HomeTopBar(onReportClick: () -> Unit = {}) {
 }
 
 @Composable
-private fun CompanySearchField(
+private fun SearchField(
     query: String,
     suggestions: List<String>,
     onQueryChange: (String) -> Unit
@@ -248,7 +263,7 @@ private fun CompanySearchField(
             onValueChange = onQueryChange,
             placeholder = {
                 Text(
-                    text = "Pesquisar por empresa associada",
+                    text = "Pesquise por empresas associadas ou nome do paciente",
                     color = Color(0xFFAAAAAA),
                     fontSize = 14.sp
                 )
