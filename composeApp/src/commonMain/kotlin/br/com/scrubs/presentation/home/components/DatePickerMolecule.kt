@@ -164,11 +164,11 @@ private fun dateRangePickerColors() = DatePickerDefaults.colors(
     dividerColor                        = Color(0xFFEEEEEE)
 )
 
-private fun Long.toFormattedDate(): String {
+fun Long.toFormattedDate(char: String = "/"): String {
     val instant = Instant.fromEpochMilliseconds(this)
     val local = instant.toLocalDateTime(TimeZone.currentSystemDefault())
     val day   = local.date.day.toString().padStart(2, '0')
     val month = local.date.month.number.toString().padStart(2, '0')
     val year  = local.year
-    return "$day/$month/$year"
+    return "$day$char$month$char$year"
 }

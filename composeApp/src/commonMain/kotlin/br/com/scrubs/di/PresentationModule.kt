@@ -1,6 +1,7 @@
 package br.com.scrubs.di
 
 import br.com.scrubs.domain.model.Receipt
+import br.com.scrubs.presentation.backup.BackupScreenModel
 import br.com.scrubs.presentation.camera.CameraScreenModule
 import br.com.scrubs.presentation.confirmation.ConfirmationScreenModel
 import br.com.scrubs.presentation.home.HomeScreenModel
@@ -37,4 +38,6 @@ val presentationModule = module {
     }
 
     factory { ReportScreenModel(repository = get()) }
+
+    factory { BackupScreenModel(repository = get()) }
 }

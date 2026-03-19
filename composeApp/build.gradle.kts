@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -64,6 +65,8 @@ kotlin {
             implementation(libs.moko.permissions.compose)
             implementation(libs.moko.permissions.camera)
             implementation(libs.moko.permissions.gallery)
+
+            implementation(libs.kotlinx.serialization.json)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

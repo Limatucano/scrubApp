@@ -9,7 +9,7 @@ enum class DateFilter(val label: String) {
         fun customLabel(startMillis: Long, endMillis: Long): String =
             "${startMillis.toFormattedDate()} - ${endMillis.toFormattedDate()}"
 
-        fun Long.toFormattedDate(): String {
+        private fun Long.toFormattedDate(): String {
             val (day, month, year) = toDateParts()
             return "${day.padStart(2, '0')}/${month.padStart(2, '0')}/$year"
         }
