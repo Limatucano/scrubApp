@@ -65,10 +65,10 @@ actual fun decrypt(data: ByteArray, password: String): ByteArray {
 }
 
 actual fun saveBackupFile(bytes: ByteArray, fileName: String): String {
-    val context: Context = getKoin().get()
+    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+    if (!downloadsDir.exists()) downloadsDir.mkdirs()
 
-    // Salva no cache para poder compartilhar via FileProvider
-    val file = File(context.filesDir, fileName).also { it.writeBytes(bytes) }
+    val file = File(downloadsDir, fileName).also { it.writeBytes(bytes) }
     return file.absolutePath
 }
 
@@ -86,6 +86,7 @@ actual fun shareBackupFile(filePath: String) {
         type = "application/octet-stream"
         putExtra(Intent.EXTRA_STREAM, uri)
         putExtra(Intent.EXTRA_SUBJECT, "Backup Scrubs")
+        clipData = android.content.ClipData.newRawUri("", uri)  // ← adicionar essa linha
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
@@ -105,7 +106,7 @@ actual fun FilePicker(
     val context = LocalContext.current
 
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) {
             val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
@@ -117,7 +118,7 @@ actual fun FilePicker(
 
     LaunchedEffect(open) {
         if (open) {
-            launcher.launch("*/*") // "*/*" abre todos os tipos de arquivo
+            launcher.launch(arrayOf("*/*")) // "*/*" abre todos os tipos de arquivo
         }
     }
 }

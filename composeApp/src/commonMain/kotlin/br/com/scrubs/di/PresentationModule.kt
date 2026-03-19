@@ -39,5 +39,5 @@ val presentationModule = module {
 
     factory { ReportScreenModel(repository = get()) }
 
-    factory { BackupScreenModel(repository = get()) }
+    factory { BackupScreenModel(repository = get(), permissionManager = get()) }
 }

@@ -6,6 +6,8 @@ import br.com.scrubs.domain.mapper.toModels
 import br.com.scrubs.domain.model.DateFilter
 import br.com.scrubs.domain.model.Receipt
 import br.com.scrubs.domain.repository.ReceiptRepository
+import br.com.scrubs.utils.backup.BackupReceipt
+import br.com.scrubs.utils.backup.toReceipt
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlin.time.Clock
@@ -35,6 +37,7 @@ class ReceiptRepositoryImpl(
     }
 
     override suspend fun getAll(): Flow<List<Receipt>> = dao.getAll().map { it.toModels() }
+    override suspend fun saveAll(receipts: List<BackupReceipt>) = dao.insertAll(receipts.map { it.toReceipt().toEntity() })
     override suspend fun save(receipt: Receipt) = dao.insert(receipt.toEntity())
     override suspend fun remove(receipt: Receipt) = dao.delete(receipt.toEntity())
     override suspend fun getDistinctHealthPlans() = dao.getDistinctHealthPlans()

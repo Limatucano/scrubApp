@@ -65,6 +65,7 @@ kotlin {
             implementation(libs.moko.permissions.compose)
             implementation(libs.moko.permissions.camera)
             implementation(libs.moko.permissions.gallery)
+            implementation(libs.moko.permissions.storage)
 
             implementation(libs.kotlinx.serialization.json)
         }

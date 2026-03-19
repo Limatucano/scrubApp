@@ -33,4 +33,7 @@ interface ReceiptDao {
 
     @Query("SELECT DISTINCT company FROM receipts WHERE company != '' ORDER BY company ASC")
     suspend fun getDistinctCompanies(): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(receipts: List<ReceiptEntity>)
 }

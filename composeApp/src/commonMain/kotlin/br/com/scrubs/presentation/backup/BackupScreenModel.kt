@@ -2,6 +2,8 @@ package br.com.scrubs.presentation.backup
 
 import br.com.scrubs.domain.repository.ReceiptRepository
 import br.com.scrubs.presentation.home.components.toFormattedDate
+import br.com.scrubs.presentation.permission.AppPermission
+import br.com.scrubs.presentation.permission.PermissionManager
 import br.com.scrubs.utils.backup.BackupFile
 import br.com.scrubs.utils.backup.decrypt
 import br.com.scrubs.utils.backup.encrypt
@@ -9,7 +11,6 @@ import br.com.scrubs.utils.backup.saveBackupFile
 import br.com.scrubs.utils.backup.toBackupFile
 import br.com.scrubs.utils.backup.toBackupReceipt
 import br.com.scrubs.utils.backup.toJson
-import br.com.scrubs.utils.backup.toReceipt
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,7 @@ data class BackupState(
     val exportedFilePath: String? = null,   // não nulo = exportação concluída
     val importSuccess: Boolean = false,
     val filePickerOpen: Boolean = false,
+    val showPermissionDialog: Boolean = false,
     val importCount: Int = 0,
     val error: String? = null
 ) {
@@ -65,7 +67,8 @@ sealed class BackupEvent {
 }
 
 class BackupScreenModel(
-    private val repository: ReceiptRepository
+    private val repository: ReceiptRepository,
+    val permissionManager: PermissionManager
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(BackupState())
@@ -93,6 +96,34 @@ class BackupScreenModel(
                 _state.update { it.copy(filePickerOpen = false) }
             BackupEvent.OpenFilePicker -> _state.update { it.copy(filePickerOpen = true) }
         }
+    }
+
+    fun requestPermission(
+        permissions: List<AppPermission>,
+        result: suspend () -> Unit = {}
+    ) {
+        screenModelScope.launch {
+            permissionManager.request(
+                permissions = permissions,
+                blockSuccess = {
+                    result()
+                },
+                blockDenied = {
+                    _state.update { it.copy(showPermissionDialog = true) }
+                },
+                blockDeniedAlways = {
+                    _state.update { it.copy(showPermissionDialog = true) }
+                }
+            )
+        }
+    }
+
+    fun dismissPermissionDialog() =
+        _state.update { it.copy(showPermissionDialog = false) }
+
+    fun goToSetting() {
+        _state.update { it.copy(showPermissionDialog = false) }
+        permissionManager.openSettings()
     }
 
     private fun export() {
@@ -136,7 +167,7 @@ class BackupScreenModel(
                 val decrypted = decrypt(bytes, password)
                 val json = decrypted.decodeToString()
                 val backup = json.toBackupFile()
-                backup.receipts.forEach { repository.save(it.toReceipt()) }
+                repository.saveAll(backup.receipts)
                 backup.receipts.size
             }
                 .onSuccess { count ->

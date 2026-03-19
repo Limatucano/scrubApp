@@ -28,6 +28,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -38,6 +39,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,12 +56,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.com.scrubs.presentation.permission.AppPermission
+import br.com.scrubs.presentation.permission.PermissionDeniedDialog
 import br.com.scrubs.utils.backup.FilePicker
 import br.com.scrubs.utils.backup.shareBackupFile
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import org.jetbrains.compose.resources.painterResource
+import scrubs.composeapp.generated.resources.Res
+import scrubs.composeapp.generated.resources.arrow_back
 
 class BackupScreen : Screen {
     @Composable
@@ -67,13 +74,17 @@ class BackupScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = koinScreenModel<BackupScreenModel>()
         val state by screenModel.state.collectAsState()
-
-        // Dialog de senha para importação
         var showImportPasswordDialog by remember { mutableStateOf(false) }
         var pendingImportBytes by remember { mutableStateOf<ByteArray?>(null) }
 
-        // File picker para importar
-
+        LaunchedEffect(Unit) {
+            screenModel.requestPermission(
+                permissions = listOf(
+                    AppPermission.WRITE_STORAGE,
+                    AppPermission.STORAGE
+                )
+            )
+        }
 
         // Dialog de senha da importação
         if (showImportPasswordDialog && pendingImportBytes != null) {
@@ -89,6 +100,13 @@ class BackupScreen : Screen {
                     )
                     pendingImportBytes = null
                 }
+            )
+        }
+
+        if (state.showPermissionDialog) {
+            PermissionDeniedDialog(
+                onDismiss = screenModel::dismissPermissionDialog,
+                onSettingsClick = screenModel::goToSetting
             )
         }
 
@@ -136,7 +154,9 @@ class BackupScreen : Screen {
             open = state.filePickerOpen,
             onFileSelected = { bytes ->
                 bytes?.let {
-                    screenModel.onEvent(BackupEvent.ImportFileSelected(bytes, state.exportPassword))
+                    pendingImportBytes = it
+                    showImportPasswordDialog = true
+                    screenModel.onEvent(BackupEvent.DismissFilePicker)
                 }
             },
             onDismiss = { screenModel.onEvent(BackupEvent.DismissFilePicker) }
@@ -172,7 +192,11 @@ private fun BackupContent(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Text("←", fontSize = 20.sp, color = Color(0xFF1A1A2E))
+                        Icon(
+                            painter = painterResource(Res.drawable.arrow_back),
+                            contentDescription = null,
+                            tint = Color(0xFF4A4AE8)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -332,26 +356,32 @@ private fun ExportSuccessBanner(filePath: String, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            Text("✅", fontSize = 18.sp)
-            Text(
-                text = "Exportação concluída! Que tal garantir a segurança desses dados agora mesmo? Compartilhe o arquivo para a sua nuvem ou e-mail para ter um backup sempre acessível.",
-                fontSize = 13.sp,
-                color = Color(0xFF2E7D32),
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = "Clique aqui para compartilhar.",
-                fontSize = 14.sp,
-                color = Color(0xFF2E7D32),
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.Black
-            )
+        Column {
+            Row(
+                modifier = Modifier.padding(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Text("✅", fontSize = 18.sp)
+                Text(
+                    text = "Exportação concluída! Que tal garantir a segurança desses dados agora mesmo? Compartilhe o arquivo para a sua nuvem ou e-mail para ter um backup sempre acessível.",
+                    fontSize = 13.sp,
+                    color = Color(0xFF2E7D32),
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            Row(
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = "Clique aqui para compartilhar.",
+                    fontSize = 14.sp,
+                    color = Color(0xFF2E7D32),
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Black
+                )
+            }
         }
     }
 }

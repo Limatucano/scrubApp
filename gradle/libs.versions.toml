@@ -57,6 +57,7 @@ moko-permissions-core = { module = "dev.icerock.moko:permissions", version.ref =
 moko-permissions-compose = { module = "dev.icerock.moko:permissions-compose", version.ref = "moko-permissions" }
 moko-permissions-camera = { module = "dev.icerock.moko:permissions-camera", version.ref = "moko-permissions" }
 moko-permissions-gallery = { module = "dev.icerock.moko:permissions-gallery", version.ref = "moko-permissions" }
+moko-permissions-storage = {  module = "dev.icerock.moko:permissions-storage", version.ref = "moko-permissions" }
 
 #Camera
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCore" }
