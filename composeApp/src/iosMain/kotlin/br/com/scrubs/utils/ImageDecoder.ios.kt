@@ -9,6 +9,7 @@ import kotlinx.cinterop.usePinned
 import org.jetbrains.skia.Image
 import platform.Foundation.NSData
 import platform.Foundation.create
+import androidx.compose.ui.graphics.asSkiaBitmap
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 actual fun decodeByteArrayToImageBitmap(bytes: ByteArray): ImageBitmap {
@@ -16,4 +17,11 @@ actual fun decodeByteArrayToImageBitmap(bytes: ByteArray): ImageBitmap {
         NSData.create(bytes = pinned.addressOf(0), length = bytes.size.toULong())
     }
     return Image.makeFromEncoded(bytes).toComposeImageBitmap()
+}
+
+actual fun decodeImageBitmapToByteArray(image: ImageBitmap): ByteArray {
+    val skiaBitmap = image.asSkiaBitmap()
+    val image = Image.makeFromBitmap(skiaBitmap)
+    val data = image.encodeToData() ?: error("Falha ao converter bitmap")
+    return data.bytes
 }

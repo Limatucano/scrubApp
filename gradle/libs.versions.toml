@@ -19,6 +19,7 @@ moko-permissions = "0.19.1"
 cameraCore = "1.5.3"
 kotlinxDatetime = "0.7.1"
 kotlinxSerializationJson = "1.10.0"
+krop = "0.2.0"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
@@ -64,6 +65,8 @@ androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.r
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraCore" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraCore" }
+
+krop = { module = "com.attafitamim.krop:ui", version.ref = "krop" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

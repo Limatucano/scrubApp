@@ -68,6 +68,7 @@ kotlin {
             implementation(libs.moko.permissions.storage)
 
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.krop)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
