@@ -28,27 +28,31 @@ actual fun CameraPreview(
 
     LaunchedEffect(isFrontCamera) {
         session.beginConfiguration()
-        session.inputs.forEach { session.removeInput(it as AVCaptureInput) }
+        var configured = false
+        try {
+            session.inputs.forEach { session.removeInput(it as AVCaptureInput) }
 
-        val position = if (isFrontCamera) AVCaptureDevicePositionFront
-        else AVCaptureDevicePositionBack
+            val position = if (isFrontCamera) AVCaptureDevicePositionFront
+            else AVCaptureDevicePositionBack
 
-        val device = AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo)
-            ?: return@LaunchedEffect
+            val device = AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo)
+                ?: return@LaunchedEffect
 
-        currentDevice = device
+            currentDevice = device
 
-        val input = AVCaptureDeviceInput.deviceInputWithDevice(device, null)
-            ?: return@LaunchedEffect
+            val input = AVCaptureDeviceInput.deviceInputWithDevice(device, null)
+                ?: return@LaunchedEffect
 
-        if (session.canAddInput(input)) session.addInput(input)
-        if (!session.outputs.contains(photoOutput) && session.canAddOutput(photoOutput)) {
-            session.addOutput(photoOutput)
+            if (session.canAddInput(input)) session.addInput(input)
+            if (!session.outputs.contains(photoOutput) && session.canAddOutput(photoOutput)) {
+                session.addOutput(photoOutput)
+            }
+            configured = true
+        } finally {
+            session.commitConfiguration()
         }
 
-        session.commitConfiguration()
-
-        if (!session.isRunning()) {
+        if (configured && !session.isRunning()) {
             session.startRunning()
         }
     }
@@ -95,7 +99,9 @@ actual fun CameraPreview(
                 ?.setFrame(view.bounds)
         },
         onRelease = {
-            session.stopRunning()
+            if (session.isRunning()) {
+                session.stopRunning()
+            }
         }
     )
 }
