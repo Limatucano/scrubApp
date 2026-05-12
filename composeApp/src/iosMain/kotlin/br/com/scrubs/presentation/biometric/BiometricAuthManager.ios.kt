@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+
 package br.com.scrubs.presentation.biometric
 
 import platform.LocalAuthentication.LAContext
